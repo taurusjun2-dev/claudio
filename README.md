@@ -21,6 +21,8 @@
 ---
 
 > [!WARNING]
+> <img src="docs/warn.png" width="300"/>
+>
 > **macOS 提示「已损坏，无法打开」**
 >
 > 由于作者没有 Apple Developer 会员，应用未经苹果公证，macOS 会弹出“Claudio FM 已损坏”的提示。
