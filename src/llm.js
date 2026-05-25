@@ -44,7 +44,8 @@ async function think(systemPrompt, userPrompt) {
   try {
     const parsed = JSON.parse(content)
     return {
-      say: parsed.say || '',
+      session_title: parsed.session_title || "",
+      say: parsed.say || "",
       play: Array.isArray(parsed.play) ? parsed.play : [],
       reason: parsed.reason || '',
       segue: parsed.segue || ''

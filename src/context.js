@@ -78,6 +78,7 @@ async function assemble(userInput) {
     '---\n## 执行上下文\n' + getExecutionContext(),
     `---\n请以 JSON 格式回复：
 {
+  "session_title": "为这次播放起一个富有诗意的英文标题（2-4个词，如 Monday Night Exhale）",
   "say": "DJ 要说的话（中文，1-3句，自然有温度）",
   "play": ["歌名 - 歌手", ...],  // 每次推荐 3-5 首，构成一个连贯的小歌单
   "reason": "内部选曲理由（不展示给用户）",
