@@ -246,7 +246,7 @@ function openNowPlaying() {
     // Fetch story if not already loaded for this song
     const cached = _storyCache.get(currentSong.id)
     if (cached) {
-      showStory(cached, false, true)  // cached: show immediately
+      showStory(cached, false)
     } else if (!_storyLoaded || _storyLoadedFor !== currentSong.id) {
       fetchAndPlayStory(currentSong.title, currentSong.artist, currentSong.id)
     }
@@ -280,7 +280,7 @@ async function fetchAndPlayStory(title, artist, songId) {
         if (npTitle) npTitle.textContent = t
       }
       _storyCache.set(songId, data.story)
-      showStory(data.story, true, false)
+      showStory(data.story)
       speak(data.story)
     } else {
       setNPSpeaking(false)
@@ -352,63 +352,46 @@ function clearNPSentences() {
 
 
 // ── Show story in NP overlay ──
-function showStory(text, addToChat = true, immediate = false) {
+function showStory(text, addToChat = true) {
   if (!text) return
   clearNPSentences()
-  setNPSpeaking(!immediate)
   const el = document.getElementById('np-sentences')
   if (!el) return
 
   const sentences = splitSentences(text)
   if (!sentences.length) { setNPSpeaking(false); return }
 
-  // Also add as a single DJ message in main chat
-  if (addToChat) {
-    const chatEl = document.getElementById('chat-messages')
-    const now = new Date()
-    const ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
-    const wrap = document.createElement('div')
-    wrap.className = 'dj-msg'
-    wrap.innerHTML = `
-      <div class="msg-avatar">C</div>
-      <div class="dj-msg-body">
-        <div class="dj-msg-label">CLAUDIO</div>
-        <div class="dj-msg-text">${text}</div>
-        <div class="dj-msg-meta"><span class="dj-msg-time">${ts}</span></div>
-      </div>`
-    chatEl.appendChild(wrap)
-    chatEl.scrollTop = chatEl.scrollHeight
-  }
-
-  const renderSentence = (s, i, delay) => {
-    const relSec = Math.floor(delay / 1000)
-    const ts = Math.floor(relSec/60) + ':' + (relSec%60).toString().padStart(2,'0')
+  sentences.forEach((s, i) => {
+    // NP overlay: one div per sentence
     const words = s.split(/(\s+)/).map(t =>
       /\s+/.test(t) ? t : '<span class="w">' + t + '</span>'
     ).join('')
     const div = document.createElement('div')
     div.className = 'np-sentence future'
-    div.innerHTML = '<span class="np-sentence-meta">Claudio &bull; ' + ts + '</span><div class="np-sentence-text">' + words + '</div>'
+    div.innerHTML = '<span class="np-sentence-meta">Claudio</span><div class="np-sentence-text">' + words + '</div>'
     el.appendChild(div)
     _npSentences.push({ el: div, textEl: div.querySelector('.np-sentence-text') })
     activateNPSentence(_npSentences.length - 1)
     el.scrollTop = el.scrollHeight
-    if (i === sentences.length - 1 && !immediate) {
-      setTimeout(() => setNPSpeaking(false), 3000)
-    }
-  }
 
-  if (immediate) {
-    sentences.forEach((s, i) => renderSentence(s, i, 0))
-  } else {
-    const CPS = 4.5
-    let charOffset = 0
-    sentences.forEach((s, i) => {
-      const delay = charOffset * 1000 / CPS
-      charOffset += s.length
-      setTimeout(() => renderSentence(s, i, delay), delay)
-    })
-  }
+    // Main chat: one message per sentence
+    if (addToChat) {
+      const chatEl = document.getElementById('chat-messages')
+      const now = new Date()
+      const chatTs = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
+      const wrap = document.createElement('div')
+      wrap.className = 'dj-msg'
+      wrap.innerHTML = '<div class="msg-avatar">C</div>' +
+        '<div class="dj-msg-body">' +
+        '<div class="dj-msg-label">CLAUDIO</div>' +
+        '<div class="dj-msg-text">' + s + '</div>' +
+        '<div class="dj-msg-meta"><span class="dj-msg-time">' + chatTs + '</span></div>' +
+        '</div>'
+      chatEl.appendChild(wrap)
+      chatEl.scrollTop = chatEl.scrollHeight
+    }
+  })
+  setNPSpeaking(false)
 }
 
 // ── DJ say: progressive sentences ──
