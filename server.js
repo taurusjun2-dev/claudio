@@ -70,7 +70,9 @@ app.post('/api/story', async (req, res) => {
   const { title, artist } = req.body
   if (!title) return res.status(400).json({ error: 'title required' })
   try {
-    const story = await generateStory(title, artist || '')
+    const nowPlaying = require('./src/state').getNowPlaying()
+    const songId = nowPlaying?.id || null
+    const story = await generateStory(title, artist || '', songId)
     res.json({ story })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -109,11 +111,22 @@ app.post('/api/dequeue', (req, res) => {
 
   app.post('/api/settings/test', async (req, res) => {
     try {
-      const llm = require('./src/llm')
-      await llm.chat([{ role: 'user', content: 'hi' }])
+      const axios = require('axios')
+      const { url, model, apiKey } = req.body
+      const cfg = state.getPrefs('llm_config') || {}
+      const testUrl = (url || cfg.url || '').replace(/\/$/, '')
+      const testKey = apiKey || cfg.apiKey || ''
+      const testModel = model || cfg.model || 'deepseek-chat'
+      if (!testUrl || !testKey) return res.json({ ok: false, error: 'URL 或 API Key 为空' })
+      await axios.post(testUrl + '/chat/completions', {
+        model: testModel,
+        messages: [{ role: 'user', content: 'hi' }],
+        max_tokens: 5
+      }, { headers: { Authorization: 'Bearer ' + testKey }, timeout: 10000 })
       res.json({ ok: true })
     } catch (err) {
-      res.json({ ok: false, error: err.message })
+      const msg = err.response?.data?.error?.message || err.message
+      res.json({ ok: false, error: msg })
     }
   })
 

@@ -22,7 +22,10 @@ async function handle(input) {
 async function handleWithLLM(input) {
   state.addMessage('user', input)
 
-  const { systemPrompt, userPrompt } = await context.assemble(input)
+  const nowPlaying = state.getNowPlaying()
+  // Get cached story for current song from state
+  const storyText = nowPlaying ? (state.getPrefs('story_' + nowPlaying.id) || null) : null
+  const { systemPrompt, userPrompt } = await context.assemble(input, nowPlaying, storyText)
   const plan = await llm.think(systemPrompt, userPrompt)
 
   state.addMessage('assistant', plan.say)

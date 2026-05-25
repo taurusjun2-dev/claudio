@@ -770,7 +770,14 @@ async function testLLM() {
   const status = document.getElementById('settings-status')
   btn.disabled = true; btn.textContent = '测试中...'
   try {
-    const r = await fetch('/api/settings/test', { method: 'POST' }).then(r => r.json())
+    const r = await fetch('/api/settings/test', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: document.getElementById('setting-url').value.trim(),
+        model: document.getElementById('setting-model').value.trim(),
+        apiKey: document.getElementById('setting-apikey').value.trim()
+      })
+    }).then(r => r.json())
     status.textContent = r.ok ? '连接成功' : ('失败: ' + r.error)
     status.style.color = r.ok ? '#00c875' : '#e55'
     if (!r.ok) setSettingsDot(true)

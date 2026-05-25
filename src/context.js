@@ -63,11 +63,18 @@ function getExecutionContext() {
   return parts.join('\n') || '无'
 }
 
-async function assemble(userInput) {
+async function assemble(userInput, nowPlaying = null, storyText = null) {
   const env = await getEnvironment()
 
+  // Inject nowPlaying context into system prompt so LLM always knows what's playing
+  const nowPlayingCtx = nowPlaying
+    ? '\n\n## 当前播放\n正在播放：' + nowPlaying.title + ' — ' + nowPlaying.artist
+      + (storyText ? '\n刚才介绍了：' + storyText : '')
+      + '\n\n**重要规则**：如果用户是在对当前这首歌表达感受或感想（如"真好听"、"好喜欢"、"感动"、"太棒了"等），不要换歌，play 数组保持为空，只用 say 回应他的情绪。只有用户明确要求听其他歌时才推荐新歌。'
+    : ''
+
   const systemPrompt = [
-    getPersona(),
+    getPersona() + nowPlayingCtx,
     '---\n## 用户语料\n' + getUserTaste(),
     '---\n## 当前环境\n' + env
   ].join('\n\n')
@@ -76,14 +83,7 @@ async function assemble(userInput) {
     '## 已播记忆\n' + getMemory(),
     '---\n## 用户输入\n' + userInput,
     '---\n## 执行上下文\n' + getExecutionContext(),
-    `---\n请以 JSON 格式回复：
-{
-  "session_title": "为这次播放起一个富有诗意的英文标题（2-4个词，如 Monday Night Exhale）",
-  "say": "DJ 要说的话（中文，1-3句，自然有温度）",
-  "play": ["歌名 - 歌手", ...],  // 每次推荐 3-5 首，构成一个连贯的小歌单
-  "reason": "内部选曲理由（不展示给用户）",
-  "segue": "下一首前的过渡语（可为空字符串）"
-}`
+    '---\n请以 JSON 格式回复：\n{\n  "session_title": "为这次播放起一个富有诗意的英文标题（2-4个词）",\n  "say": "DJ 要说的话（中文，1-3句，自然有温度）",\n  "play": ["歌名 - 歌手", ...],\n  "reason": "内部选曲理由",\n  "segue": "过渡语（可空）"\n}'
   ].join('\n\n')
 
   return { systemPrompt, userPrompt }
