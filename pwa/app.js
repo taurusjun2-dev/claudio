@@ -276,7 +276,13 @@ function showView(name) {
   event.currentTarget.classList.add('active')
 }
 
+// ── TTS volume ──
+function setTTSVolume(val) {
+  audioTTS.volume = val / 100
+}
+
 // ── Init ──
+audioTTS.volume = 0.8
 connectWS()
 fetch('/api/now').then(r => r.json()).then(song => { if (song) setNowPlaying(song) })
 
