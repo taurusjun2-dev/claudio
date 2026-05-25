@@ -1,26 +1,24 @@
 const { app, BrowserWindow } = require('electron')
 const path = require('path')
 
-const { createApp } = require('./server')
-const scheduler = require('./src/scheduler')
-
 let mainWindow = null
 let httpServer = null
 
-async function start() {
-  // Set database path before any module loads state.js
+app.whenReady().then(async () => {
+  // Must be set before any require that touches state.js
   global.__claudio_db_path = path.join(app.getPath('userData'), 'state.db')
+
+  const { createApp } = require('./server')
 
   const { server } = createApp()
 
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
-      resolve(server)
-    })
+  await new Promise(resolve => {
+    server.listen(0, '127.0.0.1', resolve)
   })
-}
 
-function createWindow(port) {
+  httpServer = server
+  const port = server.address().port
+
   mainWindow = new BrowserWindow({
     width: 520,
     height: 800,
@@ -43,16 +41,24 @@ function createWindow(port) {
   }
 
   mainWindow.on('closed', () => { mainWindow = null })
-}
-
-app.whenReady().then(async () => {
-  const server = await start()
-  httpServer = server
-  createWindow(server.address().port)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow(server.address().port)
+      mainWindow = new BrowserWindow({
+        width: 520,
+        height: 800,
+        minWidth: 400,
+        minHeight: 600,
+        title: 'Claudio',
+        backgroundColor: '#0a0a0a',
+        icon: path.join(__dirname, 'pwa', 'icon-512.png'),
+        webPreferences: {
+          preload: path.join(__dirname, 'preload.js'),
+          contextIsolation: true,
+          nodeIntegration: false
+        }
+      })
+      mainWindow.loadURL(`http://127.0.0.1:${port}`)
     }
   })
 })
