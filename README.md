@@ -20,6 +20,28 @@
 
 ---
 
+> [!WARNING]
+> **macOS 提示「已损坏，无法打开」**
+>
+> 由于作者没有 Apple Developer 会员，应用未经苹果公证，macOS 会弹出“Claudio FM 已损坏”的提示。
+>
+> **解决方法**：打开终端，执行以下命令，然后重新打开应用：
+>
+> ```bash
+> xattr -cr /Applications/Claudio\ FM.app
+> ```
+>
+> 如果安装位置不是 `/Applications`，将路径替换为实际位置即可。
+
+---
+
+> [!WARNING]
+> **Windows 用户**
+>
+> 由于作者暂无 Windows 测试环境，安装或运行中遇到任何问题，欢迎在 [Issues](https://github.com/taurusjun2-dev/claudio/issues) 提交反馈，我会尽快修复。
+
+---
+
 ### 2. 主界面
 
 <img src="docs/main_1.png" width="400"/>
