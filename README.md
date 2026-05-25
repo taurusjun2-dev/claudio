@@ -1,73 +1,139 @@
-# Claudio — 个人 AI 电台
+# Claudio FM
 
-> 读懂你的听歌习惯，像 DJ 那样播报，根据时间、天气、心情自动选歌。
+> 你的私人 AI 电台 — 读懂你的音乐口味，像 DJ 一样为你播报，根据时间、天气和心情自动选歌。
 
-## 开箱即用
+---
 
-下载安装包，双击启动。首次使用在「设置」tab 填入 API Key 即可。
+## 致谢
 
-## 架构
+感谢 **秒秒 Guo**（小红书：[@shadow_0115](https://www.xiaohongshu.com/user/profile/shadow_0115)）给予的产品思路启发。相信美好的东西值得分享。
+
+---
+
+## 使用说明
+
+### 1. 下载
+
+前往 [Releases](https://github.com/taurusjun2-dev/claudio/releases) 下载最新版本：
+- **macOS**：下载 `.dmg` 文件，拖入应用程序文件夹
+- **Windows**：下载 `.exe` 安装包
+
+---
+
+### 2. 主界面
+
+<img src="docs/main_1.png" width="400"/>
+
+启动后进入主界面，包含：
+- 实时时钟 + ON AIR 指示
+- 播放器控制栏（上一首 / 播放 / 下一首 / 音量）
+- 队列列表
+- 与 DJ 对话框
+
+---
+
+### 3. 配置 LLM
+
+点击右上角 ⚙ 按钮，打开设置面板：
+
+<img src="docs/main_settings.png" width="400"/>
+
+填写以下信息：
+
+| 字段 | 说明 | 示例 |
+|------|------|------|
+| API 地址 | LLM 服务地址 | `https://api.deepseek.com/v1` |
+| 模型名称 | 模型 ID | `deepseek-chat` |
+| API Key | 访问密钥 | `sk-xxx` |
+| 天气城市 | 影响选歌情绪 | `Shanghai` |
+
+填完后点「测试连接」验证，成功后保存。
+
+---
+
+### 4. 与 DJ 对话
+
+<img src="docs/main_play.png" width="400"/>
+
+在底部输入框与 DJ 交流，例如：
+- `来一首适合现在的音乐...`（直接点发送）
+- `来首 City Pop`
+- `来点适合深夜的`
+- `真好听` — DJ 会回应你的感受，不会打断当前播放
+
+队列播完后自动续歌，无需干预。
+
+---
+
+### 5. 音乐详情页
+
+<img src="docs/music_detail.png" width="400"/>
+
+点击正在播放的歌曲标题，进入详情页：
+- DJ 用 1-3 句话轻声介绍这首歌的背景或故事
+- 句子逐渐出现，配合 TTS 朗读
+- 点击 Logo 返回主页
+
+---
+
+## 技术架构
 
 ```
-用户语料 (user/) + DeepSeek 等 LLM + 网易云音乐 + 浏览器内置 TTS
-        |
-     Electron 桌面应用  -->  内置播放器
+用户语料 (user/*.md)
+        +
+  LLM (DeepSeek / 任意 OpenAI 兼容接口)
+        +
+  网易云音乐 (NeteaseCloudMusicApi)
+        +
+  TTS (edge-tts，免费无需 Key)
+        ↓
+  本地 Node.js 服务
+        ↓
+  Electron 桌面应用 (Mac / Windows)
 ```
 
-- **LLM**：通过 OpenAI 兼容 API 选歌（默认 DeepSeek）
-- **音乐**：网易云音乐非官方 API，获取直链 MP3
-- **TTS**：浏览器内置 Web Speech API，零依赖、开箱即用
-- **桌面**：Electron 打包，支持 macOS / Windows
+### 技术栈
 
-## 开发
+| 层 | 技术 |
+|----|------|
+| 桌面壳 | Electron |
+| 后端 | Node.js + Express + WebSocket |
+| LLM | 任意 OpenAI 兼容接口（默认 DeepSeek） |
+| 音乐 | NeteaseCloudMusicApi（非官方） |
+| TTS | edge-tts（微软 Edge 语音引擎） |
+| 持久化 | SQLite（node:sqlite 内置模块） |
+| 前端 | 原生 HTML/CSS/JS，PWA 可安装 |
 
-```bash
-npm install
-npm run dev     # 开发模式（自动打开 DevTools）
-npm start       # 启动 Electron 应用
-```
+### Prompt 架构（6 片上下文）
 
-## 构建
+每次 DJ 回应前，系统会将以下内容拼合成一段完整 Prompt：
 
-```bash
-npm run build:mac    # macOS .dmg
-npm run build:win    # Windows .exe
-npm run build        # 两者
-```
+1. DJ 人格设定（`prompts/dj-persona.md`）
+2. 用户音乐品味（`user/taste.md` 等）
+3. 环境信息（当前时间、天气）
+4. 播放记忆（最近播放 + 对话历史）
+5. 用户输入
+6. 执行上下文（当前播放歌曲、队列状态）
 
-## 个性化配置
+---
 
-编辑 `user/` 目录下的文件，让 Claudio 了解你的口味：
+## 个性化
 
-| 文件 | 说明 |
+编辑 `user/` 目录下的文件，让 Claudio FM 真正了解你：
+
+| 文件 | 内容 |
 |------|------|
-| `user/taste.md` | 喜欢/不喜欢的风格、近期在循环的歌、暂时不想听的歌 |
-| `user/routines.md` | 日常作息节律（工作日/周末各时段的音乐偏好） |
-| `user/mood-rules.md` | 天气、情绪与音乐风格的映射规则 |
-| `user/playlists.json` | 收藏歌单（早晨/专注/深夜等场景） |
+| `taste.md` | 喜欢/不喜欢的风格、近期在循环的歌 |
+| `routines.md` | 工作日/周末各时段的音乐偏好 |
+| `mood-rules.md` | 天气、情绪与音乐风格的映射规则 |
+| `playlists.json` | 收藏歌单 |
 
-## 使用方式
+---
 
-1. 打开「设置」tab，填入 LLM API Key 并保存
-2. 打开「对话」tab，输入想听的内容，例如：
-   - `来一首适合现在的`
-   - `来一首梶浦由记`
-   - `来点有节奏感的`
-3. DJ 会选歌并用语音播报，歌曲自动入队播放
-4. 队列播完后自动续歌，保持连贯播放
+## 版权
 
-### 快捷指令
+MIT License
 
-| 输入 | 效果 |
-|------|------|
-| `下一首` / `skip` | 跳到下一首 |
-| `暂停` / `pause` | 暂停播放 |
-| `继续` / `resume` | 继续播放 |
+本项目仅供个人学习和非商业用途。音乐版权归原版权方所有，网易云音乐 API 为非官方接口，使用时请遵守相关服务条款。
 
-## 定时播报
-
-服务启动后自动开启：
-
-- **07:00** 规划今天的音乐日程
-- **09:00** 早间播报
-- **每小时（09:00-22:00）** 根据当前时间和天气自动推歌入队
+© 2026 taurusjun2-dev
