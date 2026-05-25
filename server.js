@@ -54,7 +54,7 @@ function createApp() {
   app.get('/api/settings', (req, res) => {
     const settings = state.getPrefs('llm_config') || {}
     res.json({
-      url: settings.url || 'https://api.deepseek.com',
+      url: settings.url || 'https://api.deepseek.com/v1',
       model: settings.model || 'deepseek-chat',
       apiKey: settings.apiKey ? settings.apiKey.slice(-4).padStart(settings.apiKey.length, '•') : '',
       maxTokens: settings.maxTokens || 4000,
@@ -66,7 +66,7 @@ function createApp() {
     const { url, model, apiKey, maxTokens, weatherCity } = req.body
     const current = state.getPrefs('llm_config') || {}
     const updated = {
-      url: url || current.url || 'https://api.deepseek.com',
+      url: url || current.url || 'https://api.deepseek.com/v1',
       model: model || current.model || 'deepseek-chat',
       apiKey: apiKey || current.apiKey || '',
       maxTokens: maxTokens || current.maxTokens || 4000,

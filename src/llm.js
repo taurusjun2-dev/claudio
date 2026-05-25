@@ -4,7 +4,7 @@ const state = require('./state')
 function getConfig() {
   const saved = state.getPrefs('llm_config') || {}
   return {
-    baseUrl: saved.url || 'https://api.deepseek.com',
+    baseUrl: saved.url || 'https://api.deepseek.com/v1',
     apiKey: saved.apiKey || '',
     model: saved.model || 'deepseek-chat',
     maxTokens: saved.maxTokens || 4000

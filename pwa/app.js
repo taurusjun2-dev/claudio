@@ -244,7 +244,11 @@ async function sendChat() {
     })
     const data = await resp.json()
     hideLoading()
-    if (data.say) addChatMsg('assistant', data.say)
+    if (data.error) {
+      addChatMsg('assistant', '错误：' + data.error)
+    } else if (data.say) {
+      addChatMsg('assistant', data.say)
+    }
   } catch (e) {
     hideLoading()
     addChatMsg('assistant', '连接出错，请稍后重试')
