@@ -27,6 +27,10 @@
   "build": {
     "appId": "com.claudio.app",
     "productName": "Claudio",
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
     "directories": {
       "output": "dist"
     },
