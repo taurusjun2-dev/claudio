@@ -20,12 +20,12 @@ app.whenReady().then(async () => {
   httpServer = server
   const port = server.address().port
 
-  mainWindow = new BrowserWindow({
+  const windowConfig = {
     width: 520,
     height: 800,
     minWidth: 400,
     minHeight: 600,
-    title: 'Claudio',
+    title: 'Claudio FM',
     backgroundColor: '#0a0a0a',
     icon: path.join(__dirname, 'pwa', 'icon-512.png'),
     webPreferences: {
@@ -33,34 +33,22 @@ app.whenReady().then(async () => {
       contextIsolation: true,
       nodeIntegration: false
     }
-  })
+  }
 
-  mainWindow.loadURL(`http://127.0.0.1:${port}`)
+  function createWindow() {
+    mainWindow = new BrowserWindow(windowConfig)
+    mainWindow.loadURL(`http://127.0.0.1:${port}`)
+    mainWindow.on('closed', () => { mainWindow = null })
+  }
+
+  createWindow()
 
   if (process.argv.includes('--dev') || process.env.NODE_ENV === 'development') {
     mainWindow.webContents.openDevTools()
   }
 
-  mainWindow.on('closed', () => { mainWindow = null })
-
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = new BrowserWindow({
-        width: 520,
-        height: 800,
-        minWidth: 400,
-        minHeight: 600,
-        title: 'Claudio',
-        backgroundColor: '#0a0a0a',
-        icon: path.join(__dirname, 'pwa', 'icon-512.png'),
-        webPreferences: {
-          preload: path.join(__dirname, 'preload.js'),
-          contextIsolation: true,
-          nodeIntegration: false
-        }
-      })
-      mainWindow.loadURL(`http://127.0.0.1:${port}`)
-    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 

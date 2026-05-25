@@ -112,6 +112,9 @@ function splitSentences(text) {
 
 function speak(text) {
   if (!text) return
+  audioTTS.pause()
+  audioTTS.onended = null
+  audioTTS.onerror = null
   _ttsStart = Date.now()
   setNPSpeaking(true)
   duckMusic()
@@ -121,11 +124,11 @@ function speak(text) {
     body: JSON.stringify({ text })
   }).then(r => r.json()).then(data => {
     if (data.url) {
-      audioTTS.src = data.url
-      audioTTS.volume = 1.0
-      audioTTS.play().catch(() => {})
       audioTTS.onended = () => { unduckMusic(); setNPSpeaking(false) }
       audioTTS.onerror = () => { unduckMusic(); setNPSpeaking(false) }
+      audioTTS.src = data.url
+      audioTTS.volume = 1.0
+      audioTTS.play().catch(() => { unduckMusic(); setNPSpeaking(false) })
     } else {
       unduckMusic(); setNPSpeaking(false)
     }
@@ -407,18 +410,17 @@ function showDJSay(text, sessionTitle) {
   setNPSpeaking(true)
   const chatEl = document.getElementById('chat-messages')
   const sentences = splitSentences(text)
-  if (!sentences.length) return
+  if (!sentences.length) { unduckMusic(); setNPSpeaking(false); return }
   const CPS = 4.5
   let delay = 0
 
   sentences.forEach(s => {
-    const _delay = delay  // capture per-iteration
     setTimeout(() => {
       const relSec = Math.floor((Date.now() - _ttsStart) / 1000)
       const ts = Math.floor(relSec/60) + ':' + (relSec%60).toString().padStart(2,'0')
 
       // Add to NP overlay
-      addNPSentence(s, _delay * 1000 / 4.5)
+      addNPSentence(s, delay * 1000 / CPS)
 
       const words = s.split(/(\s+)/).map(t =>
         /\s+/.test(t) ? t : `<span class="w">${t}</span>`
