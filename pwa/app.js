@@ -105,7 +105,7 @@ function handleWS(msg) {
   }
 }
 
-// ── TTS via Web Speech API ──
+// ── TTS ──
 function splitSentences(text) {
   return text.split(/(?<=[。？！.?!\n])\s*/).filter(s => s.trim())
 }
@@ -411,6 +411,7 @@ function showStory(text, addToChat = true) {
 // ── DJ say: progressive sentences ──
 function showDJSay(text, sessionTitle) {
   if (!text) return
+  speak(text)
   if (sessionTitle) {
     _sessionTitle = sessionTitle
     const npTitle = document.getElementById('np-session-title')
@@ -690,6 +691,21 @@ async function checkSettingsDot() {
   } catch {
     setSettingsDot(true)
   }
+}
+
+function loadVoices() {
+  const sel = document.getElementById('setting-voice')
+  if (!sel || sel.options.length > 1) return
+  const voices = [
+    { value: 'zh-CN-XiaoyiNeural', label: '晓伊 (女声·活泼)' },
+    { value: 'zh-CN-XiaoxiaoNeural', label: '晓晓 (女声·温柔)' },
+    { value: 'zh-CN-YunxiNeural', label: '云希 (男声·阳光)' },
+    { value: 'zh-CN-YunjianNeural', label: '云健 (男声·浑厉)' },
+    { value: 'zh-CN-XiaohanNeural', label: '晓涵 (女声·稳重)' },
+  ]
+  sel.innerHTML = voices.map(function(v) {
+    return '<option value="' + v.value + '">' + v.label + '</option>'
+  }).join('')
 }
 
 function openSettings() {

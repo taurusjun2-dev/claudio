@@ -7,6 +7,7 @@ const router = require('./src/router')
 const state = require('./src/state')
 const scheduler = require('./src/scheduler')
 const { generateStory } = require('./src/story')
+const { synthesize } = require('./src/tts')
 
 function createApp() {
   const app = express()
@@ -59,8 +60,8 @@ function createApp() {
     const { text } = req.body
     if (!text) return res.status(400).json({ error: 'text required' })
     try {
-      const { synthesize } = require('./src/tts')
-      const url = await synthesize(text)
+      const cfg = state.getPrefs('llm_config') || {}
+      const url = await synthesize(text, cfg.voice || '')
       res.json({ url })
     } catch (err) {
       res.status(500).json({ error: err.message })

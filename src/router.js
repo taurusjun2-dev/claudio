@@ -46,7 +46,7 @@ async function handleWithLLM(input) {
     state.enqueue(songs)
   }
 
-  // TTS handled by frontend Web Speech API
+
 
   return {
     type: 'dj-response',
