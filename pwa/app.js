@@ -690,6 +690,30 @@ function sendCommand(cmd) {
 }
 
 // ── Settings ──
+
+function setSettingsDot(show) {
+  const btn = document.querySelector('.hbtn-settings')
+  if (!btn) return
+  let dot = btn.querySelector('.s-dot')
+  if (!dot) {
+    dot = document.createElement('span')
+    dot.className = 's-dot'
+    dot.style.cssText = 'display:inline-block;width:7px;height:7px;background:#e55;border-radius:50%;margin-left:4px;vertical-align:2px'
+    btn.appendChild(dot)
+  }
+  dot.style.display = show ? 'inline-block' : 'none'
+}
+
+async function checkSettingsDot() {
+  try {
+    const s = await fetch('/api/settings').then(r => r.json())
+    const incomplete = !s.url || !s.apiKey || !s.model
+    setSettingsDot(incomplete)
+  } catch {
+    setSettingsDot(true)
+  }
+}
+
 function openSettings() {
   document.getElementById('settings-overlay').classList.add('open')
   loadSettings()
@@ -705,7 +729,14 @@ async function loadSettings() {
     document.getElementById('setting-weather').value = s.weatherCity || ''
     document.getElementById('setting-maxtokens').value = s.maxTokens || 4000
     const k = document.getElementById('setting-apikey')
-    if (s.apiKey) { k.value = s.apiKey; k.type = 'password'; k.placeholder = '已设置' }
+    k.type = 'password'
+    if (s.apiKey) {
+      k.value = s.apiKey  // shows as ••••••
+      k.placeholder = ''
+    } else {
+      k.value = ''
+      k.placeholder = '输入 API Key'
+    }
   } catch {}
 }
 
@@ -729,7 +760,7 @@ async function saveSettings() {
         weatherCity: document.getElementById('setting-weather').value.trim()
       })
     }).then(r => r.json())
-    if (r.ok) { status.textContent = '已保存'; setTimeout(closeSettings, 1000) }
+    if (r.ok) { status.textContent = '已保存'; checkSettingsDot(); setTimeout(closeSettings, 1000) }
   } catch (e) { status.textContent = '失败: ' + e.message }
   finally { btn.disabled = false; btn.textContent = '保存设置'; setTimeout(() => status.textContent = '', 3000) }
 }
@@ -742,11 +773,13 @@ async function testLLM() {
     const r = await fetch('/api/settings/test', { method: 'POST' }).then(r => r.json())
     status.textContent = r.ok ? '连接成功' : ('失败: ' + r.error)
     status.style.color = r.ok ? '#00c875' : '#e55'
+    if (!r.ok) setSettingsDot(true)
   } catch (e) { status.textContent = '失败: ' + e.message; status.style.color = '#e55' }
   finally { btn.disabled = false; btn.textContent = '测试连接'; setTimeout(() => { status.textContent = ''; status.style.color = '' }, 5000) }
 }
 
 // ── Init ──
+checkSettingsDot()
 connectWS()
 fetch('/api/now').then(r => r.json()).then(s => { if (s) setNowPlaying(s) })
 

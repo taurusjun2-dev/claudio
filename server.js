@@ -97,9 +97,9 @@ app.post('/api/dequeue', (req, res) => {
     const { url, model, apiKey, maxTokens, weatherCity } = req.body
     const current = state.getPrefs('llm_config') || {}
     const updated = {
-      url: url || current.url || 'https://api.deepseek.com',
-      model: model || current.model || 'deepseek-v4-flash',
-      apiKey: apiKey || current.apiKey || '',
+      url: (url !== undefined && url !== null) ? url : (current.url || 'https://api.deepseek.com'),
+      model: (model !== undefined && model !== null) ? model : (current.model || 'deepseek-v4-flash'),
+      apiKey: apiKey !== undefined && apiKey !== null ? apiKey : (current.apiKey || ''),
       maxTokens: maxTokens || current.maxTokens || 4000,
       weatherCity: weatherCity || current.weatherCity || 'Shanghai'
     }

@@ -845,6 +845,7 @@
       
       <button class="hbtn" id="btn-dark-t" onclick="setTheme('dark')">DARK</button>
       <button class="hbtn active" id="btn-light-t" onclick="setTheme('light')">LIGHT</button>
+      <button class="hbtn hbtn-settings" onclick="openSettings()" style="letter-spacing:0;font-size:16px;padding:4px 10px">⚙</button>
     </div>
   </header>
 
@@ -997,7 +998,7 @@
         <input type="password" id="setting-apikey" placeholder="输入 API Key" />
         <button class="btn-eye" onclick="toggleKeyVisibility()">&#128065;</button>
       </div>
-      <span class="field-hint">保存后不再显示完整 Key</span>
+      <span class="field-hint">已设置时显示为 ••••••，清空并保存则删除</span>
     </div>
     <div class="sf">
       <label>最大 Tokens</label>
