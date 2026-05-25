@@ -1,7 +1,6 @@
 const context = require('./context')
 const llm = require('./llm')
 const ncm = require('./ncm')
-const tts = require('./tts')
 const state = require('./state')
 
 const SIMPLE_COMMANDS = {
@@ -44,7 +43,8 @@ async function handleWithLLM(input) {
     state.enqueue(songs)
   }
 
-  const ttsUrl = plan.say ? await tts.synthesize(plan.say) : null
+  // TTS handled by frontend via Web Speech API
+  const ttsUrl = null
 
   return {
     type: 'dj-response',

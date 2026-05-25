@@ -2,17 +2,56 @@
   "name": "claudio",
   "version": "0.1.0",
   "description": "Personal AI Radio Station",
-  "main": "server.js",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "start": "electron .",
+    "dev": "NODE_ENV=development electron . --dev",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build": "electron-builder --mac --win",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
     "axios": "^1.6.0",
-    "dotenv": "^16.4.0",
+    "better-sqlite3": "^11.0.0",
     "express": "^4.18.0",
     "NeteaseCloudMusicApi": "^4.15.0",
     "node-cron": "^3.0.3",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "@electron/rebuild": "^3.6.0"
+  },
+  "build": {
+    "appId": "com.claudio.app",
+    "productName": "Claudio",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "server.js",
+      "src/**/*",
+      "pwa/**/*",
+      "prompts/**/*",
+      "user/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "pwa/icon-512.png",
+      "category": "public.app-category.music"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "pwa/icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

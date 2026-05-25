@@ -1,8 +1,9 @@
-require('dotenv').config()
-const { DatabaseSync } = require('node:sqlite')
+const Database = require('better-sqlite3')
 const path = require('path')
 
-const db = new DatabaseSync(path.join(__dirname, '../state.db'))
+const dbPath = global.__claudio_db_path || path.join(__dirname, '../state.db')
+const db = new Database(dbPath)
+db.pragma('journal_mode = WAL')
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS messages (

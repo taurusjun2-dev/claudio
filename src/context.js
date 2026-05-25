@@ -1,4 +1,3 @@
-require('dotenv').config()
 const fs = require('fs')
 const path = require('path')
 const axios = require('axios')
@@ -11,12 +10,10 @@ function readFile(filePath) {
   try { return fs.readFileSync(filePath, 'utf-8') } catch { return '' }
 }
 
-// ① 系统人格
 function getPersona() {
   return readFile(path.join(PROMPTS_DIR, 'dj-persona.md'))
 }
 
-// ② 用户语料
 function getUserTaste() {
   return ['taste.md', 'routines.md', 'mood-rules.md']
     .map(f => {
@@ -27,7 +24,6 @@ function getUserTaste() {
     .join('\n\n')
 }
 
-// ③ 环境注入
 async function getEnvironment() {
   const now = new Date()
   const timeStr = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
@@ -35,7 +31,8 @@ async function getEnvironment() {
 
   let weather = '未知'
   try {
-    const city = process.env.WEATHER_CITY || 'Shanghai'
+    const settings = state.getPrefs('llm_config') || {}
+    const city = settings.weatherCity || 'Shanghai'
     const resp = await axios.get(`https://wttr.in/${city}?format=3`, { timeout: 4000 })
     weather = resp.data.trim()
   } catch { /* skip */ }
@@ -43,7 +40,6 @@ async function getEnvironment() {
   return `时间：${dayOfWeek} ${timeStr}\n天气：${weather}`
 }
 
-// ④ 已播记忆 + 对话历史
 function getMemory() {
   const plays = state.getRecentPlays(10)
   const msgs = state.getRecentMessages(6)
@@ -58,7 +54,6 @@ function getMemory() {
   return parts.join('\n\n') || '暂无记录'
 }
 
-// ⑥ 执行轨迹
 function getExecutionContext() {
   const plan = state.getTodayPlan()
   const queue = state.getQueue()
@@ -68,7 +63,6 @@ function getExecutionContext() {
   return parts.join('\n') || '无'
 }
 
-// 组装全部 6 片
 async function assemble(userInput) {
   const env = await getEnvironment()
 

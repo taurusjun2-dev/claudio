@@ -2,7 +2,6 @@ const cron = require('node-cron')
 const context = require('./context')
 const llm = require('./llm')
 const ncm = require('./ncm')
-const tts = require('./tts')
 const state = require('./state')
 
 let _broadcast = null
@@ -36,8 +35,8 @@ async function morningBrief() {
   const result = await llm.think(systemPrompt,
     userPrompt + '\n\n请进行早安播报，DJ 风格问候，推荐3首适合早晨的歌。'
   )
-  const ttsUrl = await tts.synthesize(result.say)
-  if (_broadcast) _broadcast({ type: 'scheduled', event: 'morning-brief', ...result, ttsUrl })
+  // TTS handled by frontend
+  if (_broadcast) _broadcast({ type: 'scheduled', event: 'morning-brief', ...result })
 }
 
 async function hourlyMoodCheck() {

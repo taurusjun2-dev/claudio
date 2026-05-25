@@ -279,6 +279,51 @@
       cursor: pointer;
     }
 
+    /* Settings form */
+    .settings-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .settings-field label {
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--text2);
+    }
+    .settings-field input {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    .settings-field input:focus { border-color: var(--accent2); }
+    .field-hint {
+      font-size: 11px;
+      color: var(--accent2);
+    }
+
+    #btn-save-settings {
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--bg);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    #btn-save-settings:hover { opacity: .85; }
+    #settings-status {
+      font-size: 12px;
+      text-align: center;
+      padding: 8px;
+      color: var(--accent);
+    }
+
     audio { display: none; }
   </style>
 </head>
@@ -293,6 +338,7 @@
   <button class="active" onclick="showView('player')">播放</button>
   <button onclick="showView('queue')">队列</button>
   <button onclick="showView('chat')">对话</button>
+  <button onclick="showView('settings')">设置</button>
 </nav>
 
 <!-- Player View -->
@@ -339,7 +385,34 @@
   </div>
 </div>
 
-<audio id="audio-tts"></audio>
+<!-- Settings View -->
+<div id="view-settings" class="view">
+  <div class="section-title">LLM 设置</div>
+  <div class="settings-field">
+    <label>API 地址</label>
+    <input type="url" id="setting-url" placeholder="https://api.deepseek.com" />
+  </div>
+  <div class="settings-field">
+    <label>模型名称</label>
+    <input type="text" id="setting-model" placeholder="deepseek-chat" />
+  </div>
+  <div class="settings-field">
+    <label>API Key</label>
+    <input type="password" id="setting-apikey" placeholder="输入 API Key" />
+    <span class="field-hint">仅首次填写，保存后不再显示完整 Key</span>
+  </div>
+  <div class="settings-field">
+    <label>最大 Tokens</label>
+    <input type="number" id="setting-maxtokens" value="4000" min="1000" max="32000" />
+  </div>
+  <div class="settings-field">
+    <label>天气城市 (英文)</label>
+    <input type="text" id="setting-weather" placeholder="Shanghai" />
+  </div>
+  <button id="btn-save-settings" onclick="saveSettings()">保存设置</button>
+  <div id="settings-status"></div>
+</div>
+
 <audio id="audio-music"></audio>
 
 <script src="/app.js"></script>

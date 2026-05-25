@@ -1,23 +1,31 @@
-require('dotenv').config()
 const axios = require('axios')
+const state = require('./state')
 
-const BASE_URL = process.env.LITELLM_URL
-const API_KEY = process.env.LITELLM_API_KEY
-const MODEL = process.env.LITELLM_MODEL || 'deepseek-v4-flash'
-const MAX_TOKENS = parseInt(process.env.LITELLM_MAX_TOKENS || '4000')
+function getConfig() {
+  const saved = state.getPrefs('llm_config') || {}
+  return {
+    baseUrl: saved.url || 'https://api.deepseek.com',
+    apiKey: saved.apiKey || '',
+    model: saved.model || 'deepseek-chat',
+    maxTokens: saved.maxTokens || 4000
+  }
+}
 
 async function chat(messages, jsonMode = false) {
+  const { baseUrl, apiKey, model, maxTokens } = getConfig()
+  if (!apiKey) throw new Error('API Key 未设置，请在设置页面配置 LLM API Key')
+
   const body = {
-    model: MODEL,
+    model,
     messages,
-    max_tokens: MAX_TOKENS,
+    max_tokens: maxTokens,
     temperature: 0.7
   }
   if (jsonMode) body.response_format = { type: 'json_object' }
 
-  const resp = await axios.post(`${BASE_URL}/chat/completions`, body, {
+  const resp = await axios.post(`${baseUrl}/chat/completions`, body, {
     headers: {
-      'Authorization': `Bearer ${API_KEY}`,
+      'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json'
     },
     timeout: 30000

@@ -1,4 +1,3 @@
-const audioTTS = document.getElementById('audio-tts')
 const audioMusic = document.getElementById('audio-music')
 const btnPlay = document.getElementById('btn-play')
 const progressFill = document.getElementById('progress-fill')
@@ -8,10 +7,8 @@ const tDur = document.getElementById('t-dur')
 let ws = null
 let queue = []
 let currentSong = null
-let ttsQueue = []
-let isPlayingTTS = false
 let _userRequested = false
-let _autoFetching = false  // 防止 autoNext 并发重复请求
+let _autoFetching = false
 
 // ── WebSocket ──
 function connectWS() {
@@ -42,8 +39,7 @@ function handleWS(msg) {
       break
     case 'dj-response':
     case 'response':
-      if (msg.say) showDJSay(msg.say)
-      if (msg.ttsUrl) enqueueTTS(msg.ttsUrl)
+      if (msg.say) { showDJSay(msg.say); speak(msg.say) }
       if (msg.songs?.length) {
         queue = [...msg.songs]
         renderQueue()
@@ -57,8 +53,7 @@ function handleWS(msg) {
       if (!currentSong) playNext()
       break
     case 'scheduled':
-      if (msg.say) showDJSay(msg.say)
-      if (msg.ttsUrl) enqueueTTS(msg.ttsUrl)
+      if (msg.say) { showDJSay(msg.say); speak(msg.say) }
       if (msg.songs?.length) { queue.push(...msg.songs); renderQueue() }
       break
     case 'command':
@@ -69,6 +64,18 @@ function handleWS(msg) {
   }
 }
 
+// ── TTS: Web Speech API ──
+function speak(text) {
+  if (!text || !window.speechSynthesis) return
+  window.speechSynthesis.cancel()
+  const utt = new SpeechSynthesisUtterance(text)
+  utt.lang = 'zh-CN'
+  utt.rate = 1.0
+  utt.pitch = 1.0
+  utt.volume = parseFloat(document.getElementById('tts-volume').value) / 100
+  speechSynthesis.speak(utt)
+}
+
 // ── DJ say ──
 function showDJSay(text) {
   const el = document.getElementById('dj-text')
@@ -77,20 +84,6 @@ function showDJSay(text) {
   bubble.classList.add('speaking')
   setTimeout(() => bubble.classList.remove('speaking'), 6000)
 }
-
-// ── TTS queue ──
-function enqueueTTS(url) {
-  ttsQueue.push(url)
-  if (!isPlayingTTS) playNextTTS()
-}
-
-function playNextTTS() {
-  if (!ttsQueue.length) { isPlayingTTS = false; return }
-  isPlayingTTS = true
-  audioTTS.src = ttsQueue.shift()
-  audioTTS.play().catch(() => {})
-}
-audioTTS.onended = () => playNextTTS()
 
 // ── Music player ──
 function setNowPlaying(song) {
@@ -149,7 +142,6 @@ audioMusic.ontimeupdate = () => {
   tCur.textContent = fmt(audioMusic.currentTime)
   tDur.textContent = fmt(audioMusic.duration)
 
-  // 剩最后 20s 且队列为空时，提前预取下一批
   const remaining = audioMusic.duration - audioMusic.currentTime
   if (remaining < 20 && queue.length === 0) autoNext()
 }
@@ -171,7 +163,6 @@ function autoNext() {
 }
 
 audioMusic.onerror = () => {
-  // MEDIA_ERR_ABORTED (code 1) = 主动切歌，不处理
   if (audioMusic.error?.code === 1) return
   document.getElementById('song-artist').textContent = '播放失败，尝试下一首'
   setTimeout(playNext, 1500)
@@ -188,6 +179,11 @@ function fmt(s) {
   const m = Math.floor(s / 60)
   const sec = Math.floor(s % 60).toString().padStart(2, '0')
   return `${m}:${sec}`
+}
+
+// ── TTS volume ──
+function setTTSVolume(val) {
+  // Volume applied in speak() on each utterance
 }
 
 // ── Queue render ──
@@ -274,18 +270,60 @@ function showView(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'))
   document.getElementById('view-' + name).classList.add('active')
   event.currentTarget.classList.add('active')
+  if (name === 'settings') loadSettings()
 }
 
-// ── TTS volume ──
-function setTTSVolume(val) {
-  audioTTS.volume = val / 100
+// ── Settings ──
+async function loadSettings() {
+  try {
+    const resp = await fetch('/api/settings')
+    const s = await resp.json()
+    document.getElementById('setting-url').value = s.url || ''
+    document.getElementById('setting-model').value = s.model || ''
+    document.getElementById('setting-weather').value = s.weatherCity || ''
+    document.getElementById('setting-maxtokens').value = s.maxTokens || 4000
+    if (s.apiKey) {
+      document.getElementById('setting-apikey').placeholder = '已设置，留空保持不变'
+    }
+  } catch (e) { /* skip */ }
+}
+
+async function saveSettings() {
+  const btn = document.getElementById('btn-save-settings')
+  const status = document.getElementById('settings-status')
+  btn.disabled = true
+  btn.textContent = '保存中...'
+  try {
+    const resp = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: document.getElementById('setting-url').value.trim(),
+        model: document.getElementById('setting-model').value.trim(),
+        apiKey: document.getElementById('setting-apikey').value.trim(),
+        maxTokens: parseInt(document.getElementById('setting-maxtokens').value) || 4000,
+        weatherCity: document.getElementById('setting-weather').value.trim()
+      })
+    })
+    const result = await resp.json()
+    if (result.ok) {
+      status.textContent = '设置已保存'
+      document.getElementById('setting-apikey').value = ''
+      document.getElementById('setting-apikey').placeholder = '已设置，留空保持不变'
+    }
+  } catch (e) {
+    status.textContent = '保存失败: ' + e.message
+  } finally {
+    btn.disabled = false
+    btn.textContent = '保存设置'
+    setTimeout(() => { status.textContent = '' }, 3000)
+  }
 }
 
 // ── Init ──
-audioTTS.volume = 0.8
 connectWS()
 fetch('/api/now').then(r => r.json()).then(song => { if (song) setNowPlaying(song) })
 
-if ('serviceWorker' in navigator) {
+if (!window.electron?.isElectron && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => {})
 }

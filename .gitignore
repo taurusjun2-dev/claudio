@@ -2,3 +2,4 @@ node_modules/
 state.db
 cache/tts/
 .env
+dist/
