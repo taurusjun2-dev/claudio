@@ -1,106 +1,252 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Claudio</title>
   <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0a;
-      --bg2: #141414;
-      --bg3: #1e1e1e;
-      --border: #2a2a2a;
-      --text: #e8e8e8;
+      --bg: #ebebf2;
+      --dot: rgba(90,90,140,0.18);
+      --card: #fff;
+      --border: rgba(0,0,0,0.08);
+      --text: #1a1a2e;
       --text2: #888;
+      --accent: #1a1a2e;
+      --on-air: #00c875;
+      --input-bg: #f4f4f8;
+      --user-bubble: #1a1a2e;
+      --user-text: #fff;
+    }
+    [data-theme="dark"] {
+      --bg: #0f0f1a;
+      --dot: rgba(255,255,255,0.05);
+      --card: #1a1a2a;
+      --border: rgba(255,255,255,0.08);
+      --text: #e8e8f0;
+      --text2: #666;
       --accent: #c8a96e;
-      --accent2: #7c6a4a;
+      --on-air: #00c875;
+      --input-bg: #141420;
+      --user-bubble: #c8a96e;
+      --user-text: #0f0f1a;
     }
 
     body {
-      background: var(--bg);
+      background-color: var(--bg);
+      background-image: radial-gradient(circle, var(--dot) 1.2px, transparent 1.2px);
+      background-size: 22px 22px;
       color: var(--text);
       font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      max-width: 600px;
+      margin: 0 auto;
     }
 
     /* ── Header ── */
     header {
       display: flex;
       align-items: center;
-      padding: 20px 24px 12px;
-      border-bottom: 1px solid var(--border);
+      justify-content: space-between;
+      padding: 16px 20px 12px;
     }
-    header h1 {
-      font-size: 18px;
-      font-weight: 300;
-      letter-spacing: 4px;
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-avatar {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      color: var(--bg);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700;
+    }
+    .logo-name {
+      font-family: 'VT323', 'Courier New', monospace;
+      font-size: 22px;
+      letter-spacing: 3px;
       color: var(--accent);
     }
-    #status-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #444;
-      margin-left: 10px;
-      transition: background .3s;
-    }
-    #status-dot.live { background: #4caf50; }
-
-    /* ── Nav tabs ── */
-    nav {
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .theme-btns {
       display: flex;
-      border-bottom: 1px solid var(--border);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
     }
-    nav button {
-      flex: 1;
+    .theme-btns button {
       background: none;
       border: none;
+      padding: 4px 12px;
+      font-size: 11px;
+      letter-spacing: 1px;
       color: var(--text2);
-      padding: 12px;
-      font-size: 13px;
       cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all .2s;
+      transition: all .15s;
     }
-    nav button.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
+    .theme-btns button.active {
+      background: var(--accent);
+      color: var(--bg);
     }
-
-    /* ── Views ── */
-    .view { display: none; flex: 1; overflow-y: auto; padding: 20px 24px; }
-    .view.active { display: flex; flex-direction: column; gap: 20px; }
-
-    /* ── Now Playing ── */
-    #now-playing-card {
-      background: var(--bg2);
+    .btn-settings {
+      background: none;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      text-align: center;
-    }
-    #song-title {
-      font-size: 20px;
-      font-weight: 500;
-      margin-bottom: 4px;
-    }
-    #song-artist { font-size: 14px; color: var(--text2); }
-
-    /* Progress */
-    #progress-wrap {
-      margin: 20px 0 8px;
+      border-radius: 50%;
+      width: 30px; height: 30px;
+      color: var(--text2);
+      font-size: 14px;
+      cursor: pointer;
       position: relative;
     }
+    .btn-settings:hover { color: var(--text); }
+    .settings-dot {
+      position: absolute; top: 2px; right: 2px;
+      width: 7px; height: 7px;
+      background: #e55; border-radius: 50%;
+      display: none;
+    }
+    .settings-dot.show { display: block; }
+
+    /* ── Clock ── */
+    .clock-section {
+      text-align: center;
+      padding: 12px 20px 16px;
+    }
+    .clock {
+      font-family: 'VT323', 'Courier New', monospace;
+      font-size: 88px;
+      line-height: 1;
+      color: var(--text);
+      letter-spacing: 4px;
+    }
+    .clock-date {
+      font-size: 12px;
+      letter-spacing: 2px;
+      color: var(--text2);
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+    .on-air {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--on-air);
+    }
+    .on-air-dot {
+      width: 7px; height: 7px;
+      background: var(--on-air);
+      border-radius: 50%;
+      animation: blink 1.4s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Player ── */
+    .player-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin: 0 16px;
+      padding: 18px 20px;
+    }
+    .np-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .np-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .np-bar {
+      width: 3px;
+      background: var(--on-air);
+      border-radius: 1px;
+      animation: barAnim 0.8s ease-in-out infinite alternate;
+    }
+    .np-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+    .np-bar:nth-child(2) { height: 14px; animation-delay: .15s; }
+    .np-bar:nth-child(3) { height: 10px; animation-delay: .3s; }
+    .np-bar:nth-child(4) { height: 18px; animation-delay: .45s; }
+    .np-bar:nth-child(5) { height: 12px; animation-delay: .1s; }
+    .np-bars.paused .np-bar { animation-play-state: paused; }
+    @keyframes barAnim { from{transform:scaleY(.3)} to{transform:scaleY(1)} }
+    .np-info { flex: 1; min-width: 0; }
+    #song-title {
+      font-size: 15px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #song-artist { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .np-status { font-size: 10px; letter-spacing: 2px; color: var(--on-air); }
+
+    .player-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .ctrl-btn {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: all .15s;
+      line-height: 1;
+    }
+    .ctrl-btn:hover { color: var(--accent); }
+    #btn-play { font-size: 24px !important; }
+    .ctrl-divider { width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+    .vol-wrap {
+      display: flex; align-items: center; gap: 6px;
+      margin-left: auto;
+      font-size: 10px; letter-spacing: 1px; color: var(--text2);
+    }
+    .vol-slider {
+      width: 72px; height: 3px;
+      -webkit-appearance: none; appearance: none;
+      background: var(--border); border-radius: 2px; outline: none; cursor: pointer;
+    }
+    .vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      background: var(--accent); border-radius: 50%;
+    }
+
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text2);
+    }
     #progress-bar {
-      width: 100%;
-      height: 3px;
-      background: var(--bg3);
+      flex: 1; height: 3px;
+      background: var(--input-bg);
       border-radius: 2px;
       cursor: pointer;
+      position: relative;
     }
     #progress-fill {
       height: 100%;
@@ -109,262 +255,205 @@
       width: 0%;
       transition: width .5s linear;
     }
-    #time-display {
+
+    /* ── Queue ── */
+    .queue-section {
+      margin: 12px 16px 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .queue-header {
       display: flex;
       justify-content: space-between;
-      font-size: 11px;
-      color: var(--text2);
-    }
-
-    /* Controls */
-    #controls {
-      display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 28px;
-      margin-top: 8px;
-    }
-    #controls button {
-      background: none;
-      border: none;
-      color: var(--text);
-      font-size: 22px;
+      padding: 12px 16px;
       cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      transition: all .15s;
-      line-height: 1;
-    }
-    #controls button:hover { color: var(--accent); }
-    #btn-play { font-size: 32px !important; }
-
-    /* DJ say bubble */
-    #dj-bubble {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: 8px;
-      padding: 14px 16px;
-      font-size: 14px;
-      line-height: 1.7;
-      color: var(--text2);
-      min-height: 52px;
-      transition: all .3s;
-    }
-    #dj-bubble.speaking { color: var(--text); }
-    #dj-label {
-      font-size: 10px;
+      font-size: 11px;
       letter-spacing: 2px;
-      color: var(--accent2);
-      margin-bottom: 6px;
+      color: var(--text2);
+      user-select: none;
     }
-
-    /* Queue */
-    #queue-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+    .queue-header:hover { color: var(--text); }
+    .queue-items { border-top: 1px solid var(--border); }
     .queue-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
       font-size: 13px;
     }
-    .queue-item .q-num { color: var(--text2); font-size: 12px; width: 16px; }
-    .queue-item .q-info { flex: 1; }
-    .queue-item .q-title { font-weight: 500; }
-    .queue-item .q-artist { color: var(--text2); font-size: 12px; }
-    .queue-empty { color: var(--text2); font-size: 13px; text-align: center; padding: 20px; }
+    .queue-item:last-child { border-bottom: none; }
+    .q-num { color: var(--text2); font-size: 11px; width: 14px; text-align: right; }
+    .q-title { font-weight: 500; }
+    .q-artist { font-size: 11px; color: var(--text2); }
+    .queue-empty-msg { padding: 14px 16px; font-size: 12px; color: var(--text2); text-align: center; }
 
-    /* Chat */
+    /* ── Chat ── */
+    .chat-section {
+      margin: 12px 16px 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-title {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; letter-spacing: 1px; font-weight: 600;
+    }
+    .chat-live-dot {
+      width: 7px; height: 7px;
+      background: var(--on-air); border-radius: 50%;
+      animation: blink 1.4s infinite;
+    }
+    .live-badge {
+      font-size: 10px; letter-spacing: 2px;
+      color: var(--on-air); border: 1px solid var(--on-air);
+      padding: 2px 6px; border-radius: 4px;
+    }
     #chat-messages {
       flex: 1;
       overflow-y: auto;
+      padding: 12px 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      padding-bottom: 4px;
+      gap: 12px;
     }
-    .chat-msg {
+    .system-msg {
+      text-align: center;
+      font-size: 11px;
+      color: var(--text2);
+      letter-spacing: 1px;
+    }
+    .dj-msg { display: flex; flex-direction: column; gap: 2px; }
+    .dj-msg-label { font-size: 10px; letter-spacing: 2px; color: var(--text2); font-weight: 600; }
+    .dj-msg-text { font-size: 14px; line-height: 1.6; color: var(--text); }
+    .dj-msg-time { font-size: 10px; color: var(--text2); margin-top: 2px; }
+    .user-msg {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    }
+    .user-msg-bubble {
+      background: var(--user-bubble);
+      color: var(--user-text);
+      padding: 8px 14px;
+      border-radius: 18px 18px 4px 18px;
+      font-size: 14px;
       max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 12px;
+    }
+    .chat-msg.loading {
       font-size: 13px;
-      line-height: 1.6;
+      color: var(--text2);
+      font-style: italic;
+      animation: pulse 1.4s ease-in-out infinite;
     }
-    .chat-msg.user {
-      align-self: flex-end;
-      background: var(--accent2);
-      color: var(--text);
-    }
-    .chat-msg.assistant {
-      align-self: flex-start;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-    }
-    #chat-input-wrap {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+    .chat-input-wrap {
+      display: flex; gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
     }
     #chat-input {
       flex: 1;
-      background: var(--bg2);
+      background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 10px 16px;
+      padding: 9px 16px;
       color: var(--text);
       font-size: 14px;
       outline: none;
     }
-    #chat-input:focus { border-color: var(--accent2); }
+    #chat-input:focus { border-color: var(--accent); }
+    #chat-input::placeholder { color: var(--text2); }
     #chat-send {
       background: var(--accent);
       border: none;
       border-radius: 50%;
-      width: 40px; height: 40px;
+      width: 38px; height: 38px;
       color: var(--bg);
       font-size: 16px;
       cursor: pointer;
       transition: opacity .15s;
+      flex-shrink: 0;
     }
-    #chat-send:hover { opacity: .85; }
+    #chat-send:hover { opacity: .8; }
 
-    /* Section headings */
-    .section-title {
-      font-size: 11px;
+    /* ── Footer ── */
+    footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 20px 20px;
+      font-size: 10px;
       letter-spacing: 2px;
       color: var(--text2);
-      text-transform: uppercase;
     }
+    #conn-status { color: var(--on-air); }
 
-    .chat-msg.loading {
-      color: var(--accent2);
-      font-style: italic;
-      animation: pulse 1.4s ease-in-out infinite;
+    /* ── Settings Modal ── */
+    .settings-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 100;
+      align-items: flex-end;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 1; }
+    .settings-overlay.open { display: flex; }
+    .settings-sheet {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      padding: 24px 20px 40px;
+      width: 100%;
+      display: flex; flex-direction: column; gap: 16px;
     }
-
-    /* TTS volume */
-    #tts-volume-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 12px;
-      color: var(--text2);
+    .settings-sheet h2 { font-size: 16px; font-weight: 600; }
+    .settings-close {
+      position: absolute; top: 16px; right: 20px;
+      background: none; border: none;
+      color: var(--text2); font-size: 20px; cursor: pointer;
     }
-    #tts-volume {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 3px;
-      background: var(--bg3);
-      border-radius: 2px;
-      outline: none;
-    }
-    #tts-volume::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-    }
-
-    /* Settings form */
-    .settings-field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .settings-field label {
-      font-size: 11px;
-      letter-spacing: 1px;
-      color: var(--text2);
-    }
-    .settings-field input {
-      background: var(--bg2);
+    .sf { display: flex; flex-direction: column; gap: 5px; }
+    .sf label { font-size: 11px; letter-spacing: 1px; color: var(--text2); }
+    .sf input {
+      background: var(--input-bg);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 10px 14px;
-      color: var(--text);
-      font-size: 14px;
-      outline: none;
+      color: var(--text); font-size: 14px; outline: none;
     }
-    .settings-field input:focus { border-color: var(--accent2); }
-    .field-hint {
-      font-size: 11px;
-      color: var(--accent2);
+    .sf input:focus { border-color: var(--accent); }
+    .field-hint { font-size: 11px; color: var(--text2); }
+    .key-row { display: flex; gap: 6px; }
+    .key-row input { flex: 1; }
+    .btn-eye {
+      background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px; cursor: pointer;
+      font-size: 14px; color: var(--text2); min-width: 40px;
     }
-
-    #btn-save-settings {
-      background: var(--accent);
-      border: none;
-      border-radius: 8px;
-      padding: 12px;
-      color: var(--bg);
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      margin-top: 8px;
+    .btn-primary {
+      background: var(--accent); border: none;
+      border-radius: 8px; padding: 12px;
+      color: var(--bg); font-size: 14px; font-weight: 500;
+      cursor: pointer; width: 100%;
     }
-    #btn-save-settings:hover { opacity: .85; }
-    #btn-test-llm {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px;
-      color: var(--text2);
-      font-size: 13px;
-      cursor: pointer;
-      margin-top: 4px;
+    .btn-primary:hover { opacity: .85; }
+    .btn-secondary {
+      background: none; border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px;
+      color: var(--text2); font-size: 13px;
+      cursor: pointer; width: 100%;
     }
-    #btn-test-llm:hover { border-color: var(--accent2); color: var(--text); }
-    /* Badge */
-    .badge {
-      display: inline-block;
-      width: 8px; height: 8px;
-      background: #e55;
-      border-radius: 50%;
-      margin-left: 4px;
-      vertical-align: 2px;
-    }
-    .badge.hidden { display: none; }
-
-    /* API key field + eye */
-    #apikey-row {
-      display: flex;
-      gap: 6px;
-    }
-    #apikey-row input {
-      flex: 1;
-    }
-    #btn-reveal-key {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text2);
-      padding: 10px;
-      cursor: pointer;
-      font-size: 14px;
-      min-width: 40px;
-    }
-    #btn-reveal-key:hover { color: var(--text); }
-
-    #settings-status {
-      font-size: 12px;
-      text-align: center;
-      padding: 8px;
-      color: var(--accent);
-    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--text); }
+    #settings-status { font-size: 12px; text-align: center; color: var(--accent); min-height: 18px; }
 
     audio { display: none; }
   </style>
@@ -372,95 +461,137 @@
 <body>
 
 <header>
-  <h1>CLAUDIO</h1>
-  <div id="status-dot"></div>
+  <div class="logo">
+    <div class="logo-avatar">C</div>
+    <span class="logo-name">Claudio</span>
+  </div>
+  <div class="header-right">
+    <div class="theme-btns">
+      <button id="btn-dark" onclick="setTheme('dark')">DARK</button>
+      <button id="btn-light" onclick="setTheme('light')" class="active">LIGHT</button>
+    </div>
+    <button class="btn-settings" onclick="openSettings()">
+      &#9881;
+      <span class="settings-dot" id="settings-dot"></span>
+    </button>
+  </div>
 </header>
 
-<nav>
-  <button class="active" onclick="showView('player')">播放</button>
-  <button onclick="showView('queue')">队列</button>
-  <button onclick="showView('chat')">对话</button>
-  <button id="nav-settings" onclick="showView('settings')">设置<span id="settings-badge" class="badge hidden"></span></button>
-</nav>
+<div class="clock-section">
+  <div class="clock" id="clock">00:00</div>
+  <div class="clock-date" id="clock-date">—</div>
+  <div class="on-air">
+    <span class="on-air-dot" id="on-air-dot"></span>
+    <span id="on-air-text">CONNECTING</span>
+  </div>
+</div>
 
-<!-- Player View -->
-<div id="view-player" class="view active">
-  <div id="now-playing-card">
-    <div id="song-title">—</div>
-    <div id="song-artist">先去「对话」tab 说点什么 ↗</div>
-    <div id="progress-wrap">
-      <div id="progress-bar" onclick="seek(event)">
-        <div id="progress-fill"></div>
+<div class="player-card">
+  <div class="np-row">
+    <div class="np-bars paused" id="np-bars">
+      <div class="np-bar"></div>
+      <div class="np-bar"></div>
+      <div class="np-bar"></div>
+      <div class="np-bar"></div>
+      <div class="np-bar"></div>
+    </div>
+    <div class="np-info">
+      <div id="song-title">—</div>
+      <div id="song-artist">Claudio FM</div>
+    </div>
+    <span class="np-status" id="np-status">· IDLE</span>
+  </div>
+
+  <div class="player-controls">
+    <button class="ctrl-btn" onclick="sendCommand('skip')" title="上一首">&#9664;&#9664;</button>
+    <button class="ctrl-btn" id="btn-play" onclick="togglePlay()">&#9654;</button>
+    <button class="ctrl-btn" onclick="sendCommand('next')" title="下一首">&#9654;&#9654;</button>
+    <div class="ctrl-divider"></div>
+    <button class="ctrl-btn" id="btn-fav" onclick="toggleFav()" title="收藏">&#9825;</button>
+    <div class="vol-wrap">
+      VOL
+      <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80" oninput="setVolume(this.value)">
+    </div>
+  </div>
+
+  <div class="progress-row">
+    <span id="t-cur">0:00</span>
+    <div id="progress-bar" onclick="seek(event)">
+      <div id="progress-fill"></div>
+    </div>
+    <span id="t-dur">0:00</span>
+  </div>
+</div>
+
+<div class="queue-section">
+  <div class="queue-header" onclick="toggleQueue()">
+    <span>QUEUE</span>
+    <span id="queue-count">0 TRACKS &#9660;</span>
+  </div>
+  <div class="queue-items" id="queue-items" style="display:none">
+    <div class="queue-empty-msg">队列为空</div>
+  </div>
+</div>
+
+<div class="chat-section">
+  <div class="chat-header">
+    <div class="chat-title">
+      <span class="chat-live-dot"></span>
+      CLAUDIO
+    </div>
+    <span class="live-badge">LIVE</span>
+  </div>
+  <div id="chat-messages">
+    <div class="system-msg">Connected to Claudio server</div>
+  </div>
+  <div class="chat-input-wrap">
+    <input id="chat-input" placeholder="Say something to the DJ..." />
+    <button id="chat-send" onclick="sendChat()">&#8593;</button>
+  </div>
+</div>
+
+<footer>
+  <span>CLAUDIO FM</span>
+  <span id="conn-status">CONNECTING</span>
+</footer>
+
+<!-- Settings Sheet -->
+<div class="settings-overlay" id="settings-overlay" onclick="closeSettingsOutside(event)">
+  <div class="settings-sheet">
+    <button class="settings-close" onclick="closeSettings()">&#10005;</button>
+    <h2>设置</h2>
+    <div class="sf">
+      <label>API 地址</label>
+      <input type="url" id="setting-url" placeholder="https://api.deepseek.com/v1" />
+    </div>
+    <div class="sf">
+      <label>模型名称</label>
+      <input type="text" id="setting-model" placeholder="deepseek-chat" />
+    </div>
+    <div class="sf">
+      <label>API Key</label>
+      <div class="key-row">
+        <input type="password" id="setting-apikey" placeholder="输入 API Key" />
+        <button class="btn-eye" onclick="toggleKeyVisibility()" id="btn-reveal-key">&#128065;</button>
       </div>
+      <span class="field-hint">保存后不再显示完整 Key</span>
     </div>
-    <div id="time-display"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
-    <div id="controls">
-      <button onclick="sendCommand('skip')" title="上一首">⏮</button>
-      <button id="btn-play" onclick="togglePlay()">▶</button>
-      <button onclick="sendCommand('next')" title="下一首">⏭</button>
+    <div class="sf">
+      <label>最大 Tokens</label>
+      <input type="number" id="setting-maxtokens" value="4000" min="1000" max="32000" />
     </div>
-  </div>
-
-  <div id="dj-bubble">
-    <div id="dj-label">DJ SAYS</div>
-    <div id="dj-text">Claudio 正在启动...</div>
-  </div>
-
-  <div id="tts-volume-wrap">
-    <span id="tts-volume-label">TTS 音量</span>
-    <input type="range" id="tts-volume" min="0" max="100" value="80" oninput="setTTSVolume(this.value)">
-  </div>
-</div>
-
-<!-- Queue View -->
-<div id="view-queue" class="view">
-  <div class="section-title">播放队列</div>
-  <div id="queue-list"><div class="queue-empty">队列为空</div></div>
-</div>
-
-<!-- Chat View -->
-<div id="view-chat" class="view">
-  <div id="chat-messages"></div>
-  <div id="chat-input-wrap">
-    <input id="chat-input" placeholder="来一首适合现在的..." />
-    <button id="chat-send" onclick="sendChat()">↑</button>
-  </div>
-</div>
-
-<!-- Settings View -->
-<div id="view-settings" class="view">
-  <div class="section-title">LLM 设置</div>
-  <div class="settings-field">
-    <label>API 地址</label>
-    <input type="url" id="setting-url" placeholder="https://api.deepseek.com" />
-  </div>
-  <div class="settings-field">
-    <label>模型名称</label>
-    <input type="text" id="setting-model" placeholder="deepseek-chat" />
-  </div>
-  <div class="settings-field">
-    <label>API Key</label>
-    <div id="apikey-row">
-      <input type="password" id="setting-apikey" placeholder="输入 API Key" />
-      <button id="btn-reveal-key" onclick="toggleKeyVisibility()" title="显示/隐藏">👁</button>
+    <div class="sf">
+      <label>天气城市 (英文)</label>
+      <input type="text" id="setting-weather" placeholder="Shanghai" />
     </div>
-    <span class="field-hint">仅首次填写，保存后不再显示完整 Key</span>
+    <button class="btn-primary" onclick="saveSettings()">保存设置</button>
+    <button class="btn-secondary" onclick="testLLM()">测试连接</button>
+    <div id="settings-status"></div>
   </div>
-  <div class="settings-field">
-    <label>最大 Tokens</label>
-    <input type="number" id="setting-maxtokens" value="4000" min="1000" max="32000" />
-  </div>
-  <div class="settings-field">
-    <label>天气城市 (英文)</label>
-    <input type="text" id="setting-weather" placeholder="Shanghai" />
-  </div>
-  <button id="btn-save-settings" onclick="saveSettings()">保存设置</button>
-  <button id="btn-test-llm" onclick="testLLM()">测试连接</button>
-  <div id="settings-status"></div>
 </div>
 
+<audio id="audio-tts"></audio>
 <audio id="audio-music"></audio>
-
 <script src="/app.js"></script>
 </body>
 </html>

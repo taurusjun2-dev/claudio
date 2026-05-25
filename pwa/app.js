@@ -1,3 +1,4 @@
+const audioTTS = document.getElementById('audio-tts')
 const audioMusic = document.getElementById('audio-music')
 const btnPlay = document.getElementById('btn-play')
 const progressFill = document.getElementById('progress-fill')
@@ -10,22 +11,47 @@ let currentSong = null
 let _userRequested = false
 let _autoFetching = false
 
+// ── Clock ──
+function updateClock() {
+  const now = new Date()
+  const h = now.getHours().toString().padStart(2, '0')
+  const m = now.getMinutes().toString().padStart(2, '0')
+  document.getElementById('clock').textContent = h + ':' + m
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+  const day = days[now.getDay()]
+  const date = now.getDate().toString().padStart(2, '0')
+  const month = months[now.getMonth()]
+  const year = now.getFullYear()
+  document.getElementById('clock-date').textContent = `${day} · ${date} ${month} ${year}`
+}
+updateClock()
+setInterval(updateClock, 1000)
+
+// ── Theme ──
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme)
+  document.getElementById('btn-dark').classList.toggle('active', theme === 'dark')
+  document.getElementById('btn-light').classList.toggle('active', theme === 'light')
+  localStorage.setItem('claudio-theme', theme)
+}
+const savedTheme = localStorage.getItem('claudio-theme') || 'light'
+setTheme(savedTheme)
+
 // ── WebSocket ──
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws'
   ws = new WebSocket(`${proto}://${location.host}/stream`)
-
   ws.onopen = () => {
-    document.getElementById('status-dot').classList.add('live')
+    document.getElementById('conn-status').textContent = 'CONNECTED'
+    document.getElementById('on-air-text').textContent = 'ON AIR'
   }
   ws.onclose = () => {
-    document.getElementById('status-dot').classList.remove('live')
+    document.getElementById('conn-status').textContent = 'DISCONNECTED'
+    document.getElementById('on-air-text').textContent = 'OFF AIR'
     setTimeout(connectWS, 3000)
   }
-  ws.onmessage = ({ data }) => {
-    const msg = JSON.parse(data)
-    handleWS(msg)
-  }
+  ws.onmessage = ({ data }) => handleWS(JSON.parse(data))
 }
 
 function handleWS(msg) {
@@ -39,7 +65,7 @@ function handleWS(msg) {
       break
     case 'dj-response':
     case 'response':
-      if (msg.say) { showDJSay(msg.say); speak(msg.say) }
+      if (msg.say) showDJSay(msg.say)
       if (msg.songs?.length) {
         queue = [...msg.songs]
         renderQueue()
@@ -53,7 +79,7 @@ function handleWS(msg) {
       if (!currentSong) playNext()
       break
     case 'scheduled':
-      if (msg.say) { showDJSay(msg.say); speak(msg.say) }
+      if (msg.say) showDJSay(msg.say)
       if (msg.songs?.length) { queue.push(...msg.songs); renderQueue() }
       break
     case 'command':
@@ -68,21 +94,48 @@ function handleWS(msg) {
 function speak(text) {
   if (!text || !window.speechSynthesis) return
   window.speechSynthesis.cancel()
-  const utt = new SpeechSynthesisUtterance(text)
-  utt.lang = 'zh-CN'
-  utt.rate = 1.0
-  utt.pitch = 1.0
-  utt.volume = parseFloat(document.getElementById('tts-volume').value) / 100
-  speechSynthesis.speak(utt)
+  const sentences = text.split(/(?<=[。？！.?!])\s*/)
+  let delay = 0
+  sentences.filter(s => s.trim()).forEach(s => {
+    const utt = new SpeechSynthesisUtterance(s)
+    utt.lang = 'zh-CN'
+    utt.rate = 1.05
+    utt.volume = parseFloat(document.getElementById('vol-slider').value) / 100
+    setTimeout(() => speechSynthesis.speak(utt), delay)
+    delay += s.length * 120
+  })
 }
 
-// ── DJ say ──
+// ── DJ say: progressive sentence display ──
 function showDJSay(text) {
-  const el = document.getElementById('dj-text')
-  const bubble = document.getElementById('dj-bubble')
-  el.textContent = text
-  bubble.classList.add('speaking')
-  setTimeout(() => bubble.classList.remove('speaking'), 6000)
+  if (!text) return
+  const sentences = text.split(/(?<=[。？！.?!])\s*/).filter(s => s.trim())
+  if (!sentences.length) sentences.push(text)
+  const now = new Date()
+  const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
+
+  const el = document.getElementById('chat-messages')
+  const wrap = document.createElement('div')
+  wrap.className = 'dj-msg'
+  wrap.innerHTML = `<span class="dj-msg-label">CLAUDIO</span><span class="dj-msg-time">${timeStr}</span>`
+  el.appendChild(wrap)
+
+  let i = 0
+  const charsPerSec = 4
+  function showNext() {
+    if (i >= sentences.length) { el.scrollTop = el.scrollHeight; return }
+    const span = document.createElement('div')
+    span.className = 'dj-msg-text'
+    span.textContent = sentences[i]
+    wrap.appendChild(span)
+    el.scrollTop = el.scrollHeight
+    i++
+    if (i < sentences.length) {
+      setTimeout(showNext, sentences[i-1].length / charsPerSec * 1000)
+    }
+  }
+  showNext()
+  speak(text)
 }
 
 // ── Music player ──
@@ -90,15 +143,18 @@ function setNowPlaying(song) {
   currentSong = song
   document.getElementById('song-title').textContent = song.title || '—'
   document.getElementById('song-artist').textContent = song.artist || ''
+  document.getElementById('np-status').textContent = '· PLAYING'
+  document.getElementById('np-bars').classList.remove('paused')
   if (song.url) {
     audioMusic.pause()
     audioMusic.src = song.url
     audioMusic.load()
+    audioMusic.volume = parseFloat(document.getElementById('vol-slider').value) / 100
     audioMusic.play().then(() => {
-      btnPlay.textContent = '⏸'
+      btnPlay.innerHTML = '&#9646;&#9646;'
       btnPlay.style.color = ''
     }).catch(() => {
-      btnPlay.textContent = '▶'
+      btnPlay.innerHTML = '&#9654;'
       btnPlay.style.color = 'var(--accent)'
       btnPlay.title = '点击开始播放'
     })
@@ -106,10 +162,7 @@ function setNowPlaying(song) {
 }
 
 function playNext() {
-  if (!queue.length) {
-    autoNext()
-    return
-  }
+  if (!queue.length) { autoNext(); return }
   const song = queue.shift()
   renderQueue()
   fetch('/api/played', {
@@ -122,17 +175,28 @@ function playNext() {
 
 function togglePlay() {
   if (audioMusic.paused) {
-    if (!audioMusic.src && queue.length) {
-      playNext()
-      return
-    }
+    if (!audioMusic.src && queue.length) { playNext(); return }
     audioMusic.play().catch(() => {})
-    btnPlay.textContent = '⏸'
+    btnPlay.innerHTML = '&#9646;&#9646;'
     btnPlay.style.color = ''
+    document.getElementById('np-bars').classList.remove('paused')
   } else {
     audioMusic.pause()
-    btnPlay.textContent = '▶'
+    btnPlay.innerHTML = '&#9654;'
+    document.getElementById('np-bars').classList.add('paused')
+    document.getElementById('np-status').textContent = '· PAUSED'
   }
+}
+
+function setVolume(val) {
+  audioMusic.volume = val / 100
+}
+
+function toggleFav() {
+  const btn = document.getElementById('btn-fav')
+  const active = btn.style.color === 'red'
+  btn.style.color = active ? '' : 'red'
+  btn.innerHTML = active ? '&#9825;' : '&#9829;'
 }
 
 audioMusic.ontimeupdate = () => {
@@ -141,15 +205,22 @@ audioMusic.ontimeupdate = () => {
   progressFill.style.width = pct + '%'
   tCur.textContent = fmt(audioMusic.currentTime)
   tDur.textContent = fmt(audioMusic.duration)
-
   const remaining = audioMusic.duration - audioMusic.currentTime
   if (remaining < 20 && queue.length === 0) autoNext()
 }
 
 audioMusic.onended = () => {
-  btnPlay.textContent = '▶'
+  btnPlay.innerHTML = '&#9654;'
+  document.getElementById('np-bars').classList.add('paused')
+  document.getElementById('np-status').textContent = '· IDLE'
   currentSong = null
   playNext()
+}
+
+audioMusic.onerror = () => {
+  if (audioMusic.error?.code === 1) return
+  document.getElementById('song-artist').textContent = '播放失败，尝试下一首'
+  setTimeout(playNext, 1500)
 }
 
 function autoNext() {
@@ -162,35 +233,35 @@ function autoNext() {
   }).finally(() => { _autoFetching = false })
 }
 
-audioMusic.onerror = () => {
-  if (audioMusic.error?.code === 1) return
-  document.getElementById('song-artist').textContent = '播放失败，尝试下一首'
-  setTimeout(playNext, 1500)
-}
-
 function seek(e) {
   if (!audioMusic.duration) return
   const rect = e.currentTarget.getBoundingClientRect()
-  const pct = (e.clientX - rect.left) / rect.width
-  audioMusic.currentTime = pct * audioMusic.duration
+  audioMusic.currentTime = ((e.clientX - rect.left) / rect.width) * audioMusic.duration
 }
 
 function fmt(s) {
   const m = Math.floor(s / 60)
-  const sec = Math.floor(s % 60).toString().padStart(2, '0')
-  return `${m}:${sec}`
+  return `${m}:${Math.floor(s % 60).toString().padStart(2,'0')}`
 }
 
-// ── TTS volume ──
-function setTTSVolume(val) {
-  // Volume applied in speak() on each utterance
+// ── Queue ──
+let queueOpen = false
+function toggleQueue() {
+  queueOpen = !queueOpen
+  const items = document.getElementById('queue-items')
+  const count = document.getElementById('queue-count')
+  items.style.display = queueOpen ? 'block' : 'none'
+  const n = queue.length
+  count.textContent = `${n} TRACK${n !== 1 ? 'S' : ''} ${queueOpen ? '▲' : '▼'}`
 }
 
-// ── Queue render ──
 function renderQueue() {
-  const el = document.getElementById('queue-list')
-  if (!queue.length) {
-    el.innerHTML = '<div class="queue-empty">队列为空</div>'
+  const el = document.getElementById('queue-items')
+  const count = document.getElementById('queue-count')
+  const n = queue.length
+  count.textContent = `${n} TRACK${n !== 1 ? 'S' : ''} ${queueOpen ? '▲' : '▼'}`
+  if (!n) {
+    el.innerHTML = '<div class="queue-empty-msg">队列为空</div>'
     return
   }
   el.innerHTML = queue.map((s, i) => `
@@ -207,19 +278,28 @@ function renderQueue() {
 function addChatMsg(role, text) {
   if (!text) return
   const el = document.getElementById('chat-messages')
-  const div = document.createElement('div')
-  div.className = `chat-msg ${role}`
-  div.textContent = text
-  el.appendChild(div)
+  if (role === 'user') {
+    const div = document.createElement('div')
+    div.className = 'user-msg'
+    div.innerHTML = `<div class="user-msg-bubble">${text}</div>`
+    el.appendChild(div)
+  } else {
+    const now = new Date()
+    const t = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
+    const div = document.createElement('div')
+    div.className = 'dj-msg'
+    div.innerHTML = `<span class="dj-msg-label">CLAUDIO</span><div class="dj-msg-text">${text}</div><span class="dj-msg-time">${t}</span>`
+    el.appendChild(div)
+  }
   el.scrollTop = el.scrollHeight
 }
 
 function showLoading() {
   const el = document.getElementById('chat-messages')
   const div = document.createElement('div')
-  div.className = 'chat-msg assistant loading'
+  div.className = 'chat-msg loading'
   div.id = 'chat-loading'
-  div.textContent = 'DJ 正在为你选歌曲...'
+  div.textContent = 'DJ 正在为你选歌...'
   el.appendChild(div)
   el.scrollTop = el.scrollHeight
 }
@@ -235,7 +315,6 @@ async function sendChat() {
   _userRequested = true
   addChatMsg('user', msg)
   showLoading()
-
   try {
     const resp = await fetch('/api/chat', {
       method: 'POST',
@@ -244,11 +323,8 @@ async function sendChat() {
     })
     const data = await resp.json()
     hideLoading()
-    if (data.error) {
-      addChatMsg('assistant', '错误：' + data.error)
-    } else if (data.say) {
-      addChatMsg('assistant', data.say)
-    }
+    if (data.error) addChatMsg('assistant', '错误：' + data.error)
+    else if (data.say) addChatMsg('assistant', data.say)
   } catch (e) {
     hideLoading()
     addChatMsg('assistant', '连接出错，请稍后重试')
@@ -259,7 +335,6 @@ document.getElementById('chat-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') sendChat()
 })
 
-// ── Commands ──
 function sendCommand(cmd) {
   fetch('/api/chat', {
     method: 'POST',
@@ -268,30 +343,26 @@ function sendCommand(cmd) {
   })
 }
 
-// ── View switching ──
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'))
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'))
-  document.getElementById('view-' + name).classList.add('active')
-  event.currentTarget.classList.add('active')
-  if (name === 'settings') loadSettings()
+// ── Settings modal ──
+function openSettings() {
+  document.getElementById('settings-overlay').classList.add('open')
+  loadSettings()
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('open')
+}
+function closeSettingsOutside(e) {
+  if (e.target === document.getElementById('settings-overlay')) closeSettings()
 }
 
-// ── Settings badge ──
 async function updateSettingsBadge() {
-  const badge = document.getElementById('settings-badge')
   try {
     const resp = await fetch('/api/settings')
     const s = await resp.json()
-    if (s.apiKey) {
-      badge.classList.add('hidden')
-    } else {
-      badge.classList.remove('hidden')
-    }
-  } catch { badge.classList.remove('hidden') }
+    document.getElementById('settings-dot').classList.toggle('show', !s.apiKey)
+  } catch { document.getElementById('settings-dot').classList.add('show') }
 }
 
-// ── Settings ──
 async function loadSettings() {
   try {
     const resp = await fetch('/api/settings')
@@ -306,7 +377,7 @@ async function loadSettings() {
       keyEl.type = 'password'
       keyEl.placeholder = '已设置，留空保持不变'
     }
-  } catch (e) { /* skip */ }
+  } catch { /* skip */ }
 }
 
 function toggleKeyVisibility() {
@@ -315,10 +386,9 @@ function toggleKeyVisibility() {
 }
 
 async function saveSettings() {
-  const btn = document.getElementById('btn-save-settings')
+  const btn = document.querySelector('.settings-sheet .btn-primary')
   const status = document.getElementById('settings-status')
-  btn.disabled = true
-  btn.textContent = '保存中...'
+  btn.disabled = true; btn.textContent = '保存中...'
   try {
     const resp = await fetch('/api/settings', {
       method: 'POST',
@@ -334,45 +404,34 @@ async function saveSettings() {
     const result = await resp.json()
     if (result.ok) {
       status.textContent = '设置已保存'
-      const keyEl = document.getElementById('setting-apikey')
-      keyEl.type = 'password'
-      keyEl.placeholder = '已设置，留空保持不变'
       updateSettingsBadge()
+      setTimeout(closeSettings, 1200)
     }
   } catch (e) {
     status.textContent = '保存失败: ' + e.message
   } finally {
-    btn.disabled = false
-    btn.textContent = '保存设置'
+    btn.disabled = false; btn.textContent = '保存设置'
     setTimeout(() => { status.textContent = '' }, 3000)
   }
 }
 
 async function testLLM() {
-  const btn = document.getElementById('btn-test-llm')
+  const btn = document.querySelector('.settings-sheet .btn-secondary')
   const status = document.getElementById('settings-status')
-  btn.disabled = true
-  btn.textContent = '测试中...'
+  btn.disabled = true; btn.textContent = '测试中...'
   status.textContent = ''
   try {
     const resp = await fetch('/api/settings/test', { method: 'POST' })
     const result = await resp.json()
-    if (result.ok) {
-      status.textContent = '连接成功'
-      status.style.color = '#4caf50'
-    } else {
-      status.textContent = '连接失败: ' + (result.error || '未知错误')
-      status.style.color = '#e55'
-    }
+    status.textContent = result.ok ? '连接成功' : ('失败: ' + (result.error || '未知'))
+    status.style.color = result.ok ? '#4caf50' : '#e55'
   } catch (e) {
     status.textContent = '请求失败: ' + e.message
     status.style.color = '#e55'
   } finally {
-    btn.disabled = false
-    btn.textContent = '测试连接'
+    btn.disabled = false; btn.textContent = '测试连接'
     setTimeout(() => { status.textContent = ''; status.style.color = '' }, 5000)
   }
-}
 }
 
 // ── Init ──
