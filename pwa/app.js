@@ -10,6 +10,33 @@ let _autoFetching = false
 let _queueOpen = false
 let _ttsStart = 0
 
+// ── Audio ducking ──
+let _duckTimer = null
+function duckMusic() {
+  if (_duckTimer) clearTimeout(_duckTimer)
+  const target = 0.15
+  let v = audioMusic.volume
+  if (v <= target) return
+  const step = () => {
+    v = Math.max(target, v - 0.05)
+    audioMusic.volume = v
+    if (v > target) _duckTimer = setTimeout(step, 40)
+  }
+  step()
+}
+function unduckMusic() {
+  if (_duckTimer) clearTimeout(_duckTimer)
+  const userVol = document.getElementById('vol-slider').value / 100
+  let v = audioMusic.volume
+  const step = () => {
+    v = Math.min(userVol, v + 0.03)
+    audioMusic.volume = v
+    if (v < userVol) _duckTimer = setTimeout(step, 50)
+  }
+  step()
+}
+
+
 // ── Clock ──
 function updateClock() {
   const now = new Date()
@@ -53,6 +80,7 @@ function handleWS(msg) {
       break
     case 'dj-response':
     case 'response':
+      if (msg.ttsUrl) enqueueTTS(msg.ttsUrl)
       if (msg.say) showDJSay(msg.say, msg.session_title)
       if (msg.songs?.length) {
         queue = [...msg.songs]
@@ -78,36 +106,54 @@ function handleWS(msg) {
   }
 }
 
-// ── TTS with word highlighting ──
+// ── TTS via edge-tts server ──
 function splitSentences(text) {
   return text.split(/(?<=[。？！.?!\n])\s*/).filter(s => s.trim())
 }
 
-function speak(text) {
-  if (!text || !window.speechSynthesis) return
-  speechSynthesis.cancel()
+let _ttsQueue = []
+let _ttsPlaying = false
+
+function enqueueTTS(url) {
+  if (!url) return
+  _ttsQueue.push(url)
+  if (!_ttsPlaying) playNextTTS()
+}
+
+function playNextTTS() {
+  if (!_ttsQueue.length) {
+    _ttsPlaying = false
+    unduckMusic()
+    setNPSpeaking(false)
+    return
+  }
+  _ttsPlaying = true
+  duckMusic()
+  audioTTS.src = _ttsQueue.shift()
+  audioTTS.volume = 1.0
+  audioTTS.play().catch(() => playNextTTS())
+}
+
+audioTTS.onended = () => playNextTTS()
+audioTTS.onerror = () => playNextTTS()
+
+async function speak(text) {
+  if (!text) return
   _ttsStart = Date.now()
-  const sentences = splitSentences(text)
-  sentences.forEach(s => {
-    const utt = new SpeechSynthesisUtterance(s)
-    utt.lang = 'zh-CN'; utt.rate = 1.0
-    utt.onboundary = (e) => {
-      if (e.name !== 'word' || !_activeSentenceEl) return
-      _activeSentenceEl.querySelectorAll('.w').forEach(w => w.classList.remove('cur'))
-      let cc = 0
-      for (let w of _activeSentenceEl.querySelectorAll('.w')) {
-        if (cc >= e.charIndex) { w.classList.add('cur'); break }
-        cc += w.textContent.length + 1
-      }
-    }
-    utt.onend = () => {
-      // last sentence ends
-      if (_npSentences.length && _npCurrentIdx >= _npSentences.length - 1) {
-        setNPSpeaking(false)
-      }
-    }
-    speechSynthesis.speak(utt)
-  })
+  setNPSpeaking(true)
+  duckMusic()
+  try {
+    const resp = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    })
+    const data = await resp.json()
+    if (data.url) enqueueTTS(data.url)
+    else { unduckMusic(); setNPSpeaking(false) }
+  } catch {
+    unduckMusic(); setNPSpeaking(false)
+  }
 }
 
 let _activeSentenceEl = null
@@ -220,7 +266,10 @@ function openNowPlaying() {
     document.getElementById('np-song-info').textContent =
       (currentSong.artist || '') + (currentSong.title ? ' — ' + currentSong.title : '')
     // Fetch story if not already loaded for this song
-    if (!_storyLoaded || _storyLoadedFor !== currentSong.id) {
+    const cached = _storyCache.get(currentSong.id)
+    if (cached) {
+      showStory(cached, false)  // cached: no re-speak, no re-chat
+    } else if (!_storyLoaded || _storyLoadedFor !== currentSong.id) {
       fetchAndPlayStory(currentSong.title, currentSong.artist, currentSong.id)
     }
   }
@@ -229,6 +278,7 @@ function openNowPlaying() {
 
 let _storyLoaded = false
 let _storyLoadedFor = null
+const _storyCache = new Map()
 
 async function fetchAndPlayStory(title, artist, songId) {
   _storyLoaded = false
@@ -246,7 +296,14 @@ async function fetchAndPlayStory(title, artist, songId) {
     if (data.story && document.getElementById('np-overlay').classList.contains('open')) {
       _storyLoaded = true
       _storyLoadedFor = songId
-      showDJSay(data.story, _sessionTitle)
+      if (data.session_title || _sessionTitle) {
+        const t = data.session_title || _sessionTitle
+        const npTitle = document.getElementById('np-session-title')
+        if (npTitle) npTitle.textContent = t
+      }
+      _storyCache.set(songId, data.story)
+      showStory(data.story)
+      speak(data.story)
     } else {
       setNPSpeaking(false)
     }
@@ -315,6 +372,64 @@ function clearNPSentences() {
   _npCurrentIdx = -1
 }
 
+
+// ── Show story in NP overlay ──
+function showStory(text, addToChat = true) {
+  if (!text) return
+  clearNPSentences()
+  setNPSpeaking(true)
+  const el = document.getElementById('np-sentences')
+  if (!el) return
+
+  const sentences = splitSentences(text)
+  if (!sentences.length) { setNPSpeaking(false); return }
+
+  // Also add as a single DJ message in main chat
+  if (addToChat) {
+    const chatEl = document.getElementById('chat-messages')
+    const now = new Date()
+    const ts = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
+    const wrap = document.createElement('div')
+    wrap.className = 'dj-msg'
+    wrap.innerHTML = `
+      <div class="msg-avatar">C</div>
+      <div class="dj-msg-body">
+        <div class="dj-msg-label">CLAUDIO</div>
+        <div class="dj-msg-text">${text}</div>
+        <div class="dj-msg-meta"><span class="dj-msg-time">${ts}</span></div>
+      </div>`
+    chatEl.appendChild(wrap)
+    chatEl.scrollTop = chatEl.scrollHeight
+  }
+
+  const CPS = 4.5
+  let charOffset = 0
+
+  sentences.forEach((s, i) => {
+    const _offset = charOffset
+    const delay = _offset * 1000 / CPS
+    charOffset += s.length
+
+    setTimeout(() => {
+      const relSec = Math.floor(delay / 1000)
+      const ts = Math.floor(relSec/60) + ':' + (relSec%60).toString().padStart(2,'0')
+      const words = s.split(/(\s+)/).map(t =>
+        /\s+/.test(t) ? t : '<span class="w">' + t + '</span>'
+      ).join('')
+      const div = document.createElement('div')
+      div.className = 'np-sentence future'
+      div.innerHTML = '<span class="np-sentence-meta">Claudio &bull; ' + ts + '</span><div class="np-sentence-text">' + words + '</div>'
+      el.appendChild(div)
+      _npSentences.push({ el: div, textEl: div.querySelector('.np-sentence-text') })
+      activateNPSentence(_npSentences.length - 1)
+      el.scrollTop = el.scrollHeight
+      if (i === sentences.length - 1) {
+        setTimeout(() => setNPSpeaking(false), 3000)
+      }
+    }, delay)
+  })
+}
+
 // ── DJ say: progressive sentences ──
 function showDJSay(text, sessionTitle) {
   if (!text) return
@@ -332,9 +447,13 @@ function showDJSay(text, sessionTitle) {
   let delay = 0
 
   sentences.forEach(s => {
+    const _delay = delay  // capture per-iteration
     setTimeout(() => {
       const relSec = Math.floor((Date.now() - _ttsStart) / 1000)
       const ts = Math.floor(relSec/60) + ':' + (relSec%60).toString().padStart(2,'0')
+
+      // Add to NP overlay
+      addNPSentence(s, _delay * 1000 / 4.5)
 
       const words = s.split(/(\s+)/).map(t =>
         /\s+/.test(t) ? t : `<span class="w">${t}</span>`
@@ -360,7 +479,6 @@ function showDJSay(text, sessionTitle) {
     delay += s.length
   })
 
-  speak(text)
 }
 
 function replayDJ(btn) {

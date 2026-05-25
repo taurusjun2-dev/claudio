@@ -43,8 +43,8 @@ async function handleWithLLM(input) {
     state.enqueue(songs)
   }
 
-  // TTS handled by frontend via Web Speech API
-  const ttsUrl = null
+  const tts = require('./tts')
+  const ttsUrl = plan.say ? await tts.synthesize(plan.say) : null
 
   return {
     type: 'dj-response',

@@ -2,12 +2,10 @@ require('dotenv').config()
 const { chat } = require('./llm')
 
 async function generateStory(title, artist) {
-  const prompt = `You are Claudio, a personal DJ with deep music knowledge.
-You're now playing "${title}" by "${artist}".
-Tell the story of this song in 4-6 sentences: its background, creation story, emotional meaning, or a fascinating detail.
-Speak warmly, like a late-night radio host sharing something you genuinely love.
-Use the listener's language naturally (mix of Chinese and English is fine).
-Output JSON only: { "story": "full story text, sentences separated by periods/。" }`
+  const prompt = `你是 Claudio，私人 DJ。正在播放「${title}」by ${artist}。
+用1-3句中文，轻声说一个关于这首歌的细节或感受——语气缓慢，像是随口说给在旁边听音乐的朋友。
+不抢戏，不打扰，点到即止。
+仅输出 JSON：{ "story": "1-3句话，句子以。结尾" }`
 
   try {
     const content = await chat([{ role: 'user', content: prompt }], true)

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>Claudio</title>
+  <title>Claudio FM</title>
   <link rel="manifest" href="/manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
@@ -413,6 +413,8 @@
       font-size: 14px;
       line-height: 1.65;
       color: var(--text);
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
 
     .dj-msg-text mark {
@@ -451,7 +453,7 @@
       justify-content: flex-end;
     }
 
-    .user-msg-body { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; max-width: calc(100% - 46px); }
+    .user-msg-body { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; min-width: 60px; max-width: calc(100% - 46px); }
 
     .user-label {
       font-size: 10px; letter-spacing: 1px;
@@ -465,7 +467,8 @@
       border-radius: 14px 14px 3px 14px;
       font-size: 14px;
       line-height: 1.5;
-      max-width: 80%;
+      max-width: 100%;
+      word-break: break-word;
     }
 
     [data-theme="light"] .user-bubble { color: #fff; }
@@ -836,7 +839,7 @@
   <header>
     <div class="logo">
       <div class="logo-avatar" id="logo-avatar">C</div>
-      <span class="logo-name">Claudio</span>
+      <span class="logo-name">Claudio FM</span>
     </div>
     <div class="header-btns">
       
@@ -937,9 +940,9 @@
 <div class="np-overlay" id="np-overlay">
   <div class="np-top">
     <div class="np-top-header">
-      <div class="np-logo">
+      <div class="np-logo" onclick="closeNowPlaying()" style="cursor:pointer">
         <div class="np-logo-av">C</div>
-        <span class="np-logo-name">Claudio</span>
+        <span class="np-logo-name">Claudio FM</span>
       </div>
       <span class="np-elapsed" id="np-elapsed">0:00</span>
     </div>
@@ -948,7 +951,7 @@
       <span class="np-speaking-label">Speaking...</span>
     </div>
     <canvas id="np-wf-canvas"></canvas>
-    <button class="np-back" onclick="closeNowPlaying()">BACK</button>
+    
   </div>
 
   <div class="np-card">
