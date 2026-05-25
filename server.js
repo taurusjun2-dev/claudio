@@ -18,6 +18,8 @@ function createApp() {
   app.use('/tts', express.static(
     global.__claudio_cache_path || path.join(__dirname, 'cache/tts')
   ))
+
+  function broadcast(data) {
     const msg = JSON.stringify(data)
     wss.clients.forEach(c => { if (c.readyState === 1) c.send(msg) })
   }
@@ -48,36 +50,34 @@ function createApp() {
     res.json({ ok: true })
   })
 
-  
-
-app.post('/api/tts', async (req, res) => {
-  const { text } = req.body
-  if (!text) return res.status(400).json({ error: 'text required' })
-  try {
-    const { synthesize } = require('./src/tts')
-    const url = await synthesize(text)
-    res.json({ url })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-app.post('/api/story', async (req, res) => {
-  const { title, artist } = req.body
-  if (!title) return res.status(400).json({ error: 'title required' })
-  try {
-    const nowPlaying = require('./src/state').getNowPlaying()
-    const songId = nowPlaying?.id || null
-    const story = await generateStory(title, artist || '', songId)
-    res.json({ story })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
-
-app.post('/api/dequeue', (req, res) => {
+  app.post('/api/dequeue', (req, res) => {
     const song = state.dequeue()
     res.json({ song })
+  })
+
+  app.post('/api/tts', async (req, res) => {
+    const { text } = req.body
+    if (!text) return res.status(400).json({ error: 'text required' })
+    try {
+      const { synthesize } = require('./src/tts')
+      const url = await synthesize(text)
+      res.json({ url })
+    } catch (err) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  app.post('/api/story', async (req, res) => {
+    const { title, artist } = req.body
+    if (!title) return res.status(400).json({ error: 'title required' })
+    try {
+      const nowPlaying = state.getNowPlaying()
+      const songId = nowPlaying?.id || null
+      const story = await generateStory(title, artist || '', songId)
+      res.json({ story })
+    } catch (err) {
+      res.status(500).json({ error: err.message })
+    }
   })
 
   app.get('/api/settings', (req, res) => {
