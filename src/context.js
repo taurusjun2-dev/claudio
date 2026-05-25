@@ -43,11 +43,19 @@ async function getEnvironment() {
   return `时间：${dayOfWeek} ${timeStr}\n天气：${weather}`
 }
 
-// ④ 已播记忆
+// ④ 已播记忆 + 对话历史
 function getMemory() {
   const plays = state.getRecentPlays(10)
-  if (!plays.length) return '暂无播放记录'
-  return '最近播放：\n' + plays.map(p => `- ${p.artist} 《${p.title}》`).join('\n')
+  const msgs = state.getRecentMessages(6)
+
+  const parts = []
+  if (plays.length) {
+    parts.push('最近播放：\n' + plays.map(p => `- ${p.artist} 《${p.title}》`).join('\n'))
+  }
+  if (msgs.length) {
+    parts.push('最近对话：\n' + msgs.map(m => `${m.role === 'user' ? '用户' : 'DJ'}：${m.content}`).join('\n'))
+  }
+  return parts.join('\n\n') || '暂无记录'
 }
 
 // ⑥ 执行轨迹

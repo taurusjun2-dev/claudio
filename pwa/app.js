@@ -10,7 +10,8 @@ let queue = []
 let currentSong = null
 let ttsQueue = []
 let isPlayingTTS = false
-let _userRequested = false  // 用户主动发消息时为 true，预取时为 false
+let _userRequested = false
+let _autoFetching = false  // 防止 autoNext 并发重复请求
 
 // ── WebSocket ──
 function connectWS() {
@@ -46,8 +47,9 @@ function handleWS(msg) {
       if (msg.songs?.length) {
         queue = [...msg.songs]
         renderQueue()
-        if (_userRequested || !currentSong) playNext()  // 用户主动请求立即切，预取等 onended
+        if (_userRequested || !currentSong) playNext()
         _userRequested = false
+        _autoFetching = false
       }
       break
     case 'auto-enqueue':
@@ -112,19 +114,11 @@ function setNowPlaying(song) {
 
 function playNext() {
   if (!queue.length) {
-    fetch('/api/dequeue').then(r => r.json()).then(({ song }) => {
-      if (song) {
-        setNowPlaying(song)
-      } else {
-        autoNext()
-      }
-    })
+    autoNext()
     return
   }
   const song = queue.shift()
   renderQueue()
-  // 同步消耗服务端 DB queue，防止 onended 时重复捞到同一首
-  fetch('/api/dequeue')
   fetch('/api/played', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -148,7 +142,6 @@ function togglePlay() {
   }
 }
 
-let _prefetching = false
 audioMusic.ontimeupdate = () => {
   if (!audioMusic.duration) return
   const pct = (audioMusic.currentTime / audioMusic.duration) * 100
@@ -158,25 +151,23 @@ audioMusic.ontimeupdate = () => {
 
   // 剩最后 20s 且队列为空时，提前预取下一批
   const remaining = audioMusic.duration - audioMusic.currentTime
-  if (remaining < 20 && queue.length === 0 && !_prefetching) {
-    _prefetching = true
-    autoNext()
-  }
+  if (remaining < 20 && queue.length === 0) autoNext()
 }
 
 audioMusic.onended = () => {
   btnPlay.textContent = '▶'
   currentSong = null
-  _prefetching = false
   playNext()
 }
 
 function autoNext() {
+  if (_autoFetching) return
+  _autoFetching = true
   fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message: '继续，根据刚才的心情再来一首' })
-  })
+  }).finally(() => { _autoFetching = false })
 }
 
 audioMusic.onerror = () => {
