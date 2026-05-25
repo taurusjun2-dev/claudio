@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claudio</title>
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg2: #141414;
+      --bg3: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #e8e8e8;
+      --text2: #888;
+      --accent: #c8a96e;
+      --accent2: #7c6a4a;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      padding: 20px 24px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      font-size: 18px;
+      font-weight: 300;
+      letter-spacing: 4px;
+      color: var(--accent);
+    }
+    #status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #444;
+      margin-left: 10px;
+      transition: background .3s;
+    }
+    #status-dot.live { background: #4caf50; }
+
+    /* ── Nav tabs ── */
+    nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    nav button {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text2);
+      padding: 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .2s;
+    }
+    nav button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Views ── */
+    .view { display: none; flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .view.active { display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── Now Playing ── */
+    #now-playing-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    #song-title {
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    #song-artist { font-size: 14px; color: var(--text2); }
+
+    /* Progress */
+    #progress-wrap {
+      margin: 20px 0 8px;
+      position: relative;
+    }
+    #progress-bar {
+      width: 100%;
+      height: 3px;
+      background: var(--bg3);
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    #progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width .5s linear;
+    }
+    #time-display {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text2);
+    }
+
+    /* Controls */
+    #controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 8px;
+    }
+    #controls button {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: all .15s;
+      line-height: 1;
+    }
+    #controls button:hover { color: var(--accent); }
+    #btn-play { font-size: 32px !important; }
+
+    /* DJ say bubble */
+    #dj-bubble {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text2);
+      min-height: 52px;
+      transition: all .3s;
+    }
+    #dj-bubble.speaking { color: var(--text); }
+    #dj-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--accent2);
+      margin-bottom: 6px;
+    }
+
+    /* Queue */
+    #queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    .queue-item .q-num { color: var(--text2); font-size: 12px; width: 16px; }
+    .queue-item .q-info { flex: 1; }
+    .queue-item .q-title { font-weight: 500; }
+    .queue-item .q-artist { color: var(--text2); font-size: 12px; }
+    .queue-empty { color: var(--text2); font-size: 13px; text-align: center; padding: 20px; }
+
+    /* Chat */
+    #chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-bottom: 4px;
+    }
+    .chat-msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      background: var(--accent2);
+      color: var(--text);
+    }
+    .chat-msg.assistant {
+      align-self: flex-start;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+    }
+    #chat-input-wrap {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    #chat-input {
+      flex: 1;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 10px 16px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    #chat-input:focus { border-color: var(--accent2); }
+    #chat-send {
+      background: var(--accent);
+      border: none;
+      border-radius: 50%;
+      width: 40px; height: 40px;
+      color: var(--bg);
+      font-size: 16px;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    #chat-send:hover { opacity: .85; }
+
+    /* Section headings */
+    .section-title {
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--text2);
+      text-transform: uppercase;
+    }
+
+    .chat-msg.loading {
+      color: var(--accent2);
+      font-style: italic;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    audio { display: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>CLAUDIO</h1>
+  <div id="status-dot"></div>
+</header>
+
+<nav>
+  <button class="active" onclick="showView('player')">播放</button>
+  <button onclick="showView('queue')">队列</button>
+  <button onclick="showView('chat')">对话</button>
+</nav>
+
+<!-- Player View -->
+<div id="view-player" class="view active">
+  <div id="now-playing-card">
+    <div id="song-title">—</div>
+    <div id="song-artist">先去「对话」tab 说点什么 ↗</div>
+    <div id="progress-wrap">
+      <div id="progress-bar" onclick="seek(event)">
+        <div id="progress-fill"></div>
+      </div>
+    </div>
+    <div id="time-display"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
+    <div id="controls">
+      <button onclick="sendCommand('skip')" title="上一首">⏮</button>
+      <button id="btn-play" onclick="togglePlay()">▶</button>
+      <button onclick="sendCommand('next')" title="下一首">⏭</button>
+    </div>
+  </div>
+
+  <div id="dj-bubble">
+    <div id="dj-label">DJ SAYS</div>
+    <div id="dj-text">Claudio 正在启动...</div>
+  </div>
+</div>
+
+<!-- Queue View -->
+<div id="view-queue" class="view">
+  <div class="section-title">播放队列</div>
+  <div id="queue-list"><div class="queue-empty">队列为空</div></div>
+</div>
+
+<!-- Chat View -->
+<div id="view-chat" class="view">
+  <div id="chat-messages"></div>
+  <div id="chat-input-wrap">
+    <input id="chat-input" placeholder="来一首适合现在的..." />
+    <button id="chat-send" onclick="sendChat()">↑</button>
+  </div>
+</div>
+
+<audio id="audio-tts"></audio>
+<audio id="audio-music"></audio>
+
+<script src="/app.js"></script>
+</body>
+</html>

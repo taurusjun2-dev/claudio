@@ -1,0 +1,26 @@
+{
+  "favorites": [
+    { "title": "光るとき", "artist": "羊文学" },
+    { "title": "グッドバイ", "artist": "toe" },
+    { "title": "またね", "artist": "中村佳穂" },
+    { "title": "ひびき", "artist": "羊文学" },
+    { "title": "First Light", "artist": "Explosions in the Sky" },
+    { "title": "Your Hand in Mine", "artist": "Explosions in the Sky" },
+    { "title": "Plastic Love", "artist": "竹内まりや" },
+    { "title": "Chasing Ice", "artist": "Four Tet" },
+    { "title": "Rosewood", "artist": "Floating Points" },
+    { "title": "秦皇岛", "artist": "万能青年旅店" }
+  ],
+  "morning": [
+    { "title": "Ride on Time", "artist": "山下达郎" },
+    { "title": "Plastic Love", "artist": "竹内まりや" }
+  ],
+  "focus": [
+    { "title": "The Only Moment We Were Alone", "artist": "Explosions in the Sky" },
+    { "title": "グッドバイ", "artist": "toe" }
+  ],
+  "night": [
+    { "title": "Rosewood", "artist": "Floating Points" },
+    { "title": "またね", "artist": "中村佳穂" }
+  ]
+}
