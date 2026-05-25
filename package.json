@@ -1,6 +1,6 @@
 {
-  "name": "claudio",
-  "version": "0.2.0",
+  "name": "claudio-fm",
+  "version": "0.2.1",
   "description": "Personal AI Radio Station",
   "main": "main.js",
   "scripts": {
@@ -26,7 +26,7 @@
   },
   "build": {
     "appId": "com.claudio.app",
-    "productName": "Claudio",
+    "productName": "Claudio FM",
     "publish": {
       "provider": "github",
       "releaseType": "release"
