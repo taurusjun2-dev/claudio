@@ -8,7 +8,9 @@
 
 ## 致谢
 
-感谢 **秒秒 Guo**（小红书：[@shadow_0115](https://www.xiaohongshu.com/user/profile/55a508e8c2bdeb432f5763e2)）给予的产品思路启发。相信美好的东西值得分享。
+感谢 **秒秒 Guo**（小红书：[@shadow_0115](https://www.xiaohongshu.com/user/profile/55a508e8c2bdeb432f5763e2)）给予的产品思路启发。
+
+相信美好的东西值得分享, life is beautiful!
 
 ---
 
