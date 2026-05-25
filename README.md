@@ -6,7 +6,7 @@
 
 ## 致谢
 
-感谢 **秒秒 Guo**（小红书：[@shadow_0115](https://www.xiaohongshu.com/user/profile/shadow_0115)）给予的产品思路启发。相信美好的东西值得分享。
+感谢 **秒秒 Guo**（小红书：[@shadow_0115](https://www.xiaohongshu.com/user/profile/55a508e8c2bdeb432f5763e2)）给予的产品思路启发。相信美好的东西值得分享。
 
 ---
 
@@ -132,8 +132,16 @@
 
 ## 版权
 
-MIT License
+本项目采用 [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh) 协议授权。
 
-本项目仅供个人学习和非商业用途。音乐版权归原版权方所有，网易云音乐 API 为非官方接口，使用时请遵守相关服务条款。
+你可以自由地：
+- **分享** — 复制、发行本作品
+- **演绎** — 修改、转换本作品
+
+但须遵守以下条件：
+- **署名** — 须注明原作者（taurusjun2-dev）及致谢来源
+- **非商业性使用** — 不得将本作品用于商业目的
+
+音乐版权归原版权方所有，网易云音乐 API 为非官方接口，使用时请遵守相关服务条款。
 
 © 2026 taurusjun2-dev
