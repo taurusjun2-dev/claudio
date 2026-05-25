@@ -129,25 +129,56 @@ function initNPViz() {
   }
 }
 
+let _wfRaf = null
+let _wfBaseHeights = []
+let _wfSeed = 42
+
+function seededRand(s) { let x=Math.sin(s+1)*43758.5453; return x-Math.floor(x) }
+
 function drawNPWaveform(seed) {
+  _wfSeed = seed
   const canvas = document.getElementById('np-wf-canvas')
   if (!canvas) return
   const W = canvas.parentElement.clientWidth
   const H = 140
   canvas.width = W; canvas.height = H
+  const bw = 2.5, gap = 1.5
+  const n = Math.floor(W / (bw+gap))
+  // Pre-compute base heights
+  _wfBaseHeights = []
+  for (let i=0;i<n;i++) {
+    const h = 8 + (seededRand(seed*0.01+i*0.17)*0.6 + seededRand(seed*0.02+i*0.31)*0.4) * (H-16)
+    _wfBaseHeights.push(h)
+  }
+  if (_wfRaf) cancelAnimationFrame(_wfRaf)
+  animateWaveform()
+}
+
+function animateWaveform() {
+  const canvas = document.getElementById('np-wf-canvas')
+  if (!canvas || !document.getElementById('np-overlay').classList.contains('open')) {
+    _wfRaf = null; return
+  }
+  const W = canvas.width, H = canvas.height
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0,0,W,H)
   const bw = 2.5, gap = 1.5
-  const n = Math.floor(W / (bw+gap))
-  function sr(s) { let x=Math.sin(s+1)*43758.5; return x-Math.floor(x) }
+  const t = Date.now() / 800
+  const isPlaying = !audioMusic.paused
   const grad = ctx.createLinearGradient(0,0,0,H)
-  grad.addColorStop(0,'rgba(255,255,255,0.65)')
-  grad.addColorStop(1,'rgba(255,255,255,0.08)')
+  grad.addColorStop(0,'rgba(255,255,255,0.7)')
+  grad.addColorStop(1,'rgba(255,255,255,0.06)')
   ctx.fillStyle = grad
-  for (let i=0;i<n;i++) {
-    const h = 6 + (sr(seed*0.01+i*0.17)*0.6 + sr(seed*0.02+i*0.31)*0.4) * (H-12)
+  _wfBaseHeights.forEach((base, i) => {
+    let h = base
+    if (isPlaying) {
+      // Animate: each bar oscillates at its own frequency
+      const osc = Math.sin(t + i*0.4) * 0.18 + Math.sin(t*1.7 + i*0.23) * 0.10
+      h = Math.max(4, base * (1 + osc))
+    }
     ctx.fillRect(i*(bw+gap), H-h, bw, h)
-  }
+  })
+  _wfRaf = requestAnimationFrame(animateWaveform)
 }
 
 function updateNPViz() {
@@ -156,7 +187,15 @@ function updateNPViz() {
   const active = Math.floor(pct * NP_BB_BARS)
   const bars = document.getElementById('np-bb-viz')?.children
   if (!bars) return
-  Array.from(bars).forEach((b,i) => b.classList.toggle('on', i <= active))
+  const t = Date.now() / 600
+  const isPlaying = !audioMusic.paused
+  Array.from(bars).forEach((b,i) => {
+    b.classList.toggle('on', i <= active)
+    // Animate height
+    const baseH = 4 + seededRand(i * 0.37 + _wfSeed * 0.001) * 18
+    const osc = isPlaying ? Math.sin(t + i*0.5)*0.3 + Math.sin(t*1.3+i*0.3)*0.15 : 0
+    b.style.height = Math.max(3, baseH * (1+osc)) + 'px'
+  })
   document.getElementById('np-cur').textContent = fmt(audioMusic.currentTime)
   document.getElementById('np-elapsed').textContent = fmt(audioMusic.currentTime)
   document.getElementById('np-progress-fill').style.width =
@@ -173,17 +212,53 @@ function updateNPViz() {
 function openNowPlaying() {
   initNPViz()
   document.getElementById('np-overlay').classList.add('open')
+  if (_wfRaf) cancelAnimationFrame(_wfRaf)
+  animateWaveform()
   if (currentSong) {
     drawNPWaveform(currentSong.id ? parseInt(currentSong.id)%1000 : 42)
     document.getElementById('np-session-title').textContent = _sessionTitle || currentSong.title || '—'
     document.getElementById('np-song-info').textContent =
       (currentSong.artist || '') + (currentSong.title ? ' — ' + currentSong.title : '')
+    // Fetch story if not already loaded for this song
+    if (!_storyLoaded || _storyLoadedFor !== currentSong.id) {
+      fetchAndPlayStory(currentSong.title, currentSong.artist, currentSong.id)
+    }
   }
   renderNPSentences()
 }
 
+let _storyLoaded = false
+let _storyLoadedFor = null
+
+async function fetchAndPlayStory(title, artist, songId) {
+  _storyLoaded = false
+  _storyLoadedFor = null
+  clearNPSentences()
+  setNPSpeaking(true)
+
+  try {
+    const resp = await fetch('/api/story', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, artist })
+    })
+    const data = await resp.json()
+    if (data.story && document.getElementById('np-overlay').classList.contains('open')) {
+      _storyLoaded = true
+      _storyLoadedFor = songId
+      showDJSay(data.story, _sessionTitle)
+    } else {
+      setNPSpeaking(false)
+    }
+  } catch (e) {
+    setNPSpeaking(false)
+    console.error('[Story] fetch error:', e)
+  }
+}
+
 function closeNowPlaying() {
   document.getElementById('np-overlay').classList.remove('open')
+  if (_wfRaf) { cancelAnimationFrame(_wfRaf); _wfRaf = null }
 }
 
 function npSeek(e) {
@@ -296,6 +371,8 @@ function replayDJ(btn) {
 // ── Music player ──
 function setNowPlaying(song) {
   currentSong = song
+  _storyLoaded = false
+  _storyLoadedFor = null
   const titleEl = document.getElementById('song-title')
   titleEl.textContent = song.title || '—'
   titleEl.style.cursor = 'pointer'
@@ -303,7 +380,6 @@ function setNowPlaying(song) {
   document.getElementById('song-artist').textContent = song.artist || ''
   document.getElementById('np-status').textContent = '· PLAYING'
   document.getElementById('np-bars').classList.remove('paused')
-  addSystemMsg(`Now playing: ${song.title} — ${song.artist}`)
   if (document.getElementById('np-overlay').classList.contains('open')) {
     drawNPWaveform(song.id ? parseInt(song.id)%1000 : 42)
     document.getElementById('np-session-title').textContent = _sessionTitle || song.title || '—'
@@ -333,6 +409,7 @@ function playNext() {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ song })
   })
+  addSystemMsg('Now playing: ' + song.title + ' — ' + song.artist)
   setNowPlaying(song)
 }
 

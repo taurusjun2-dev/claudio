@@ -6,6 +6,7 @@ const path = require('path')
 const router = require('./src/router')
 const state = require('./src/state')
 const scheduler = require('./src/scheduler')
+const { generateStory } = require('./src/story')
 
 function createApp() {
   const app = express()
@@ -46,7 +47,19 @@ function createApp() {
     res.json({ ok: true })
   })
 
-  app.post('/api/dequeue', (req, res) => {
+  
+app.post('/api/story', async (req, res) => {
+  const { title, artist } = req.body
+  if (!title) return res.status(400).json({ error: 'title required' })
+  try {
+    const story = await generateStory(title, artist || '')
+    res.json({ story })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/dequeue', (req, res) => {
     const song = state.dequeue()
     res.json({ song })
   })
