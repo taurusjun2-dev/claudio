@@ -56,7 +56,7 @@ function createApp() {
     res.json({
       url: settings.url || 'https://api.deepseek.com',
       model: settings.model || 'deepseek-v4-flash',
-      apiKey: settings.apiKey ? settings.apiKey.slice(-4).padStart(settings.apiKey.length, '•') : '',
+      apiKey: settings.apiKey || '',
       maxTokens: settings.maxTokens || 4000,
       weatherCity: settings.weatherCity || 'Shanghai'
     })
@@ -74,6 +74,16 @@ function createApp() {
     }
     state.setPrefs('llm_config', updated)
     res.json({ ok: true })
+  })
+
+  app.post('/api/settings/test', async (req, res) => {
+    try {
+      const llm = require('./src/llm')
+      await llm.chat([{ role: 'user', content: 'hi' }])
+      res.json({ ok: true })
+    } catch (err) {
+      res.json({ ok: false, error: err.message })
+    }
   })
 
   wss.on('connection', ws => {

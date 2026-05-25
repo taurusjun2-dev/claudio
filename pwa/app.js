@@ -277,6 +277,20 @@ function showView(name) {
   if (name === 'settings') loadSettings()
 }
 
+// ── Settings badge ──
+async function updateSettingsBadge() {
+  const badge = document.getElementById('settings-badge')
+  try {
+    const resp = await fetch('/api/settings')
+    const s = await resp.json()
+    if (s.apiKey) {
+      badge.classList.add('hidden')
+    } else {
+      badge.classList.remove('hidden')
+    }
+  } catch { badge.classList.remove('hidden') }
+}
+
 // ── Settings ──
 async function loadSettings() {
   try {
@@ -286,10 +300,18 @@ async function loadSettings() {
     document.getElementById('setting-model').value = s.model || ''
     document.getElementById('setting-weather').value = s.weatherCity || ''
     document.getElementById('setting-maxtokens').value = s.maxTokens || 4000
+    const keyEl = document.getElementById('setting-apikey')
     if (s.apiKey) {
-      document.getElementById('setting-apikey').placeholder = '已设置，留空保持不变'
+      keyEl.value = s.apiKey
+      keyEl.type = 'password'
+      keyEl.placeholder = '已设置，留空保持不变'
     }
   } catch (e) { /* skip */ }
+}
+
+function toggleKeyVisibility() {
+  const el = document.getElementById('setting-apikey')
+  el.type = el.type === 'password' ? 'text' : 'password'
 }
 
 async function saveSettings() {
@@ -312,8 +334,10 @@ async function saveSettings() {
     const result = await resp.json()
     if (result.ok) {
       status.textContent = '设置已保存'
-      document.getElementById('setting-apikey').value = ''
-      document.getElementById('setting-apikey').placeholder = '已设置，留空保持不变'
+      const keyEl = document.getElementById('setting-apikey')
+      keyEl.type = 'password'
+      keyEl.placeholder = '已设置，留空保持不变'
+      updateSettingsBadge()
     }
   } catch (e) {
     status.textContent = '保存失败: ' + e.message
@@ -324,8 +348,36 @@ async function saveSettings() {
   }
 }
 
+async function testLLM() {
+  const btn = document.getElementById('btn-test-llm')
+  const status = document.getElementById('settings-status')
+  btn.disabled = true
+  btn.textContent = '测试中...'
+  status.textContent = ''
+  try {
+    const resp = await fetch('/api/settings/test', { method: 'POST' })
+    const result = await resp.json()
+    if (result.ok) {
+      status.textContent = '连接成功'
+      status.style.color = '#4caf50'
+    } else {
+      status.textContent = '连接失败: ' + (result.error || '未知错误')
+      status.style.color = '#e55'
+    }
+  } catch (e) {
+    status.textContent = '请求失败: ' + e.message
+    status.style.color = '#e55'
+  } finally {
+    btn.disabled = false
+    btn.textContent = '测试连接'
+    setTimeout(() => { status.textContent = ''; status.style.color = '' }, 5000)
+  }
+}
+}
+
 // ── Init ──
 connectWS()
+updateSettingsBadge()
 fetch('/api/now').then(r => r.json()).then(song => { if (song) setNowPlaying(song) })
 
 if (!window.electron?.isElectron && 'serviceWorker' in navigator) {

@@ -317,6 +317,48 @@
       margin-top: 8px;
     }
     #btn-save-settings:hover { opacity: .85; }
+    #btn-test-llm {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      color: var(--text2);
+      font-size: 13px;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    #btn-test-llm:hover { border-color: var(--accent2); color: var(--text); }
+    /* Badge */
+    .badge {
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: #e55;
+      border-radius: 50%;
+      margin-left: 4px;
+      vertical-align: 2px;
+    }
+    .badge.hidden { display: none; }
+
+    /* API key field + eye */
+    #apikey-row {
+      display: flex;
+      gap: 6px;
+    }
+    #apikey-row input {
+      flex: 1;
+    }
+    #btn-reveal-key {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text2);
+      padding: 10px;
+      cursor: pointer;
+      font-size: 14px;
+      min-width: 40px;
+    }
+    #btn-reveal-key:hover { color: var(--text); }
+
     #settings-status {
       font-size: 12px;
       text-align: center;
@@ -338,7 +380,7 @@
   <button class="active" onclick="showView('player')">播放</button>
   <button onclick="showView('queue')">队列</button>
   <button onclick="showView('chat')">对话</button>
-  <button onclick="showView('settings')">设置</button>
+  <button id="nav-settings" onclick="showView('settings')">设置<span id="settings-badge" class="badge hidden"></span></button>
 </nav>
 
 <!-- Player View -->
@@ -398,7 +440,10 @@
   </div>
   <div class="settings-field">
     <label>API Key</label>
-    <input type="password" id="setting-apikey" placeholder="输入 API Key" />
+    <div id="apikey-row">
+      <input type="password" id="setting-apikey" placeholder="输入 API Key" />
+      <button id="btn-reveal-key" onclick="toggleKeyVisibility()" title="显示/隐藏">👁</button>
+    </div>
     <span class="field-hint">仅首次填写，保存后不再显示完整 Key</span>
   </div>
   <div class="settings-field">
@@ -410,6 +455,7 @@
     <input type="text" id="setting-weather" placeholder="Shanghai" />
   </div>
   <button id="btn-save-settings" onclick="saveSettings()">保存设置</button>
+  <button id="btn-test-llm" onclick="testLLM()">测试连接</button>
   <div id="settings-status"></div>
 </div>
 
