@@ -397,11 +397,11 @@ function showStory(text, addToChat = true, immediate = false) {
     _npSentences.push({ el: div, textEl: div.querySelector('.np-sentence-text') })
     activateNPSentence(_npSentences.length - 1)
     el.scrollTop = el.scrollHeight
-    if (i === sentences.length - 1) setNPSpeaking(false)
+    if (i === sentences.length - 1 && immediate) setNPSpeaking(false)
   }
 
   if (immediate) {
-    setNPSpeaking(false)
+
     sentences.forEach((s, i) => renderSentence(s, i))
   } else {
     setNPSpeaking(true)
@@ -433,12 +433,13 @@ function showDJSay(text, sessionTitle) {
   let delay = 0
 
   sentences.forEach(s => {
+    const d = delay
     setTimeout(() => {
       const relSec = Math.floor((Date.now() - _ttsStart) / 1000)
       const ts = Math.floor(relSec/60) + ':' + (relSec%60).toString().padStart(2,'0')
 
       // Add to NP overlay
-      addNPSentence(s, delay * 1000 / CPS)
+      addNPSentence(s, d * 1000 / CPS)
 
       const words = s.split(/(\s+)/).map(t =>
         /\s+/.test(t) ? t : `<span class="w">${t}</span>`
@@ -460,7 +461,7 @@ function showDJSay(text, sessionTitle) {
       activateNPSentence(_npSentences.length - 1)
       chatEl.appendChild(wrap)
       chatEl.scrollTop = chatEl.scrollHeight
-    }, delay * 1000 / CPS)
+    }, d * 1000 / CPS)
     delay += s.length
   })
 
