@@ -3,3 +3,5 @@ state.db
 cache/tts/
 .env
 dist/
+state.db-shm
+state.db-wal
