@@ -579,7 +579,13 @@
       border-radius: 10px; padding: 10px 14px;
       color: var(--text); font-size: 14px; outline: none;
     }
-    .sf input:focus { border-color: var(--text3); }
+    .sf input:focus, .sf select:focus { border-color: var(--text3); }
+    .sf select {
+      background: var(--card2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px;
+      color: var(--text); font-size: 14px; outline: none;
+      cursor: pointer; -webkit-appearance: none; appearance: none;
+    }
     .field-hint { font-size: 11px; color: var(--text2); }
     .key-row { display: flex; gap: 6px; }
     .key-row input { flex: 1; }
@@ -1005,6 +1011,10 @@
       <input type="number" id="setting-maxtokens" value="4000" />
     </div>
     <div class="sf">
+      <label>TTS 语音</label>
+      <select id="setting-voice"></select>
+    </div>
+    <div class="sf">
       <label>天气城市 (英文)</label>
       <input type="text" id="setting-weather" placeholder="Shanghai" />
     </div>
@@ -1014,6 +1024,7 @@
   </div>
 </div>
 
+<audio id="audio-tts"></audio>
 <audio id="audio-music"></audio>
 <script src="/app.js"></script>
 </body>

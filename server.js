@@ -15,8 +15,9 @@ function createApp() {
 
   app.use(express.json())
   app.use(express.static(path.join(__dirname, 'pwa')))
-
-  function broadcast(data) {
+  app.use('/tts', express.static(
+    global.__claudio_cache_path || path.join(__dirname, 'cache/tts')
+  ))
     const msg = JSON.stringify(data)
     wss.clients.forEach(c => { if (c.readyState === 1) c.send(msg) })
   }
@@ -49,6 +50,18 @@ function createApp() {
 
   
 
+app.post('/api/tts', async (req, res) => {
+  const { text } = req.body
+  if (!text) return res.status(400).json({ error: 'text required' })
+  try {
+    const { synthesize } = require('./src/tts')
+    const url = await synthesize(text)
+    res.json({ url })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.post('/api/story', async (req, res) => {
   const { title, artist } = req.body
   if (!title) return res.status(400).json({ error: 'title required' })
@@ -74,19 +87,21 @@ app.post('/api/dequeue', (req, res) => {
       model: settings.model || 'deepseek-v4-flash',
       apiKey: settings.apiKey || '',
       maxTokens: settings.maxTokens || 4000,
-      weatherCity: settings.weatherCity || 'Shanghai'
+      weatherCity: settings.weatherCity || 'Shanghai',
+      voice: settings.voice || ''
     })
   })
 
   app.post('/api/settings', (req, res) => {
-    const { url, model, apiKey, maxTokens, weatherCity } = req.body
+    const { url, model, apiKey, maxTokens, weatherCity, voice } = req.body
     const current = state.getPrefs('llm_config') || {}
     const updated = {
       url: (url !== undefined && url !== null) ? url : (current.url || 'https://api.deepseek.com'),
       model: (model !== undefined && model !== null) ? model : (current.model || 'deepseek-v4-flash'),
       apiKey: apiKey !== undefined && apiKey !== null ? apiKey : (current.apiKey || ''),
       maxTokens: maxTokens || current.maxTokens || 4000,
-      weatherCity: weatherCity || current.weatherCity || 'Shanghai'
+      weatherCity: weatherCity || current.weatherCity || 'Shanghai',
+      voice: voice !== undefined && voice !== null ? voice : (current.voice || '')
     }
     state.setPrefs('llm_config', updated)
     res.json({ ok: true })

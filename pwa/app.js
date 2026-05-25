@@ -1,3 +1,4 @@
+const audioTTS = document.getElementById('audio-tts')
 const audioMusic = document.getElementById('audio-music')
 const progressFill = document.getElementById('progress-fill')
 
@@ -110,17 +111,27 @@ function splitSentences(text) {
 }
 
 function speak(text) {
-  if (!text || !window.speechSynthesis) return
-  window.speechSynthesis.cancel()
+  if (!text) return
   _ttsStart = Date.now()
   setNPSpeaking(true)
   duckMusic()
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'zh-CN'
-  u.rate = 1.0
-  u.onend = () => { unduckMusic(); setNPSpeaking(false) }
-  u.onerror = () => { unduckMusic(); setNPSpeaking(false) }
-  speechSynthesis.speak(u)
+  fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  }).then(r => r.json()).then(data => {
+    if (data.url) {
+      audioTTS.src = data.url
+      audioTTS.volume = 1.0
+      audioTTS.play().catch(() => {})
+      audioTTS.onended = () => { unduckMusic(); setNPSpeaking(false) }
+      audioTTS.onerror = () => { unduckMusic(); setNPSpeaking(false) }
+    } else {
+      unduckMusic(); setNPSpeaking(false)
+    }
+  }).catch(() => {
+    unduckMusic(); setNPSpeaking(false)
+  })
 }
 
 let _activeSentenceEl = null
@@ -684,6 +695,7 @@ async function checkSettingsDot() {
 function openSettings() {
   document.getElementById('settings-overlay').classList.add('open')
   loadSettings()
+  loadVoices()
 }
 function closeSettings() { document.getElementById('settings-overlay').classList.remove('open') }
 function closeSettingsOutside(e) { if (e.target.id === 'settings-overlay') closeSettings() }
@@ -695,6 +707,8 @@ async function loadSettings() {
     document.getElementById('setting-model').value = s.model || ''
     document.getElementById('setting-weather').value = s.weatherCity || ''
     document.getElementById('setting-maxtokens').value = s.maxTokens || 4000
+    const sel = document.getElementById('setting-voice')
+    if (s.voice) sel.value = s.voice
     const k = document.getElementById('setting-apikey')
     k.type = 'password'
     if (s.apiKey) {
@@ -724,7 +738,8 @@ async function saveSettings() {
         model: document.getElementById('setting-model').value.trim(),
         apiKey: document.getElementById('setting-apikey').value.trim(),
         maxTokens: parseInt(document.getElementById('setting-maxtokens').value) || 4000,
-        weatherCity: document.getElementById('setting-weather').value.trim()
+        weatherCity: document.getElementById('setting-weather').value.trim(),
+        voice: document.getElementById('setting-voice').value
       })
     }).then(r => r.json())
     if (r.ok) { status.textContent = '已保存'; checkSettingsDot(); setTimeout(closeSettings, 1000) }
