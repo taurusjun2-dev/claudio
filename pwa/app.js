@@ -280,7 +280,7 @@ async function fetchAndPlayStory(title, artist, songId) {
         if (npTitle) npTitle.textContent = t
       }
       _storyCache.set(songId, data.story)
-      showStory(data.story, true, true)
+      showStory(data.story, true, false)
       speak(data.story)
     } else {
       setNPSpeaking(false)
