@@ -249,7 +249,7 @@ function openNowPlaying() {
     // Fetch story if not already loaded for this song
     const cached = _storyCache.get(currentSong.id)
     if (cached) {
-      showStory(cached, false)
+      showStory(cached, false, true)
     } else if (!_storyLoaded || _storyLoadedFor !== currentSong.id) {
       fetchAndPlayStory(currentSong.title, currentSong.artist, currentSong.id)
     }
@@ -283,7 +283,7 @@ async function fetchAndPlayStory(title, artist, songId) {
         if (npTitle) npTitle.textContent = t
       }
       _storyCache.set(songId, data.story)
-      showStory(data.story)
+      showStory(data.story, true, false)
       speak(data.story)
     } else {
       setNPSpeaking(false)
@@ -355,7 +355,10 @@ function clearNPSentences() {
 
 
 // ── Show story in NP overlay ──
-function showStory(text, addToChat = true) {
+// immediate=false: NP overlay animates sentence by sentence (first entry)
+// immediate=true:  NP overlay shows all at once (re-entry from cache)
+// chat is always immediate regardless of immediate flag
+function showStory(text, addToChat = true, immediate = false) {
   if (!text) return
   clearNPSentences()
   const el = document.getElementById('np-sentences')
@@ -364,22 +367,10 @@ function showStory(text, addToChat = true) {
   const sentences = splitSentences(text)
   if (!sentences.length) { setNPSpeaking(false); return }
 
-  sentences.forEach((s, i) => {
-    // NP overlay: one div per sentence
-    const words = s.split(/(\s+)/).map(t =>
-      /\s+/.test(t) ? t : '<span class="w">' + t + '</span>'
-    ).join('')
-    const div = document.createElement('div')
-    div.className = 'np-sentence future'
-    div.innerHTML = '<span class="np-sentence-meta">Claudio</span><div class="np-sentence-text">' + words + '</div>'
-    el.appendChild(div)
-    _npSentences.push({ el: div, textEl: div.querySelector('.np-sentence-text') })
-    activateNPSentence(_npSentences.length - 1)
-    el.scrollTop = el.scrollHeight
-
-    // Main chat: one message per sentence
-    if (addToChat) {
-      const chatEl = document.getElementById('chat-messages')
+  // Chat: always add all sentences immediately
+  if (addToChat) {
+    const chatEl = document.getElementById('chat-messages')
+    sentences.forEach(s => {
       const now = new Date()
       const chatTs = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
       const wrap = document.createElement('div')
@@ -392,9 +383,36 @@ function showStory(text, addToChat = true) {
         '</div>'
       chatEl.appendChild(wrap)
       chatEl.scrollTop = chatEl.scrollHeight
-    }
-  })
-  setNPSpeaking(false)
+    })
+  }
+
+  const renderSentence = (s, i) => {
+    const words = s.split(/(\s+)/).map(t =>
+      /\s+/.test(t) ? t : '<span class="w">' + t + '</span>'
+    ).join('')
+    const div = document.createElement('div')
+    div.className = 'np-sentence future'
+    div.innerHTML = '<span class="np-sentence-meta">Claudio</span><div class="np-sentence-text">' + words + '</div>'
+    el.appendChild(div)
+    _npSentences.push({ el: div, textEl: div.querySelector('.np-sentence-text') })
+    activateNPSentence(_npSentences.length - 1)
+    el.scrollTop = el.scrollHeight
+    if (i === sentences.length - 1) setNPSpeaking(false)
+  }
+
+  if (immediate) {
+    setNPSpeaking(false)
+    sentences.forEach((s, i) => renderSentence(s, i))
+  } else {
+    setNPSpeaking(true)
+    const CPS = 4.5
+    let charOffset = 0
+    sentences.forEach((s, i) => {
+      const delay = charOffset * 1000 / CPS
+      charOffset += s.length
+      setTimeout(() => renderSentence(s, i), delay)
+    })
+  }
 }
 
 // ── DJ say: progressive sentences ──
