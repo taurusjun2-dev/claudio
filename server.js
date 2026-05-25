@@ -15,11 +15,6 @@ function createApp() {
 
   app.use(express.json())
   app.use(express.static(path.join(__dirname, 'pwa')))
-  // Serve TTS audio files from the cache directory
-  app.use('/tts', (req, res, next) => {
-    const dir = global.__claudio_cache_path || path.join(__dirname, 'cache/tts')
-    express.static(dir)(req, res, next)
-  })
 
   function broadcast(data) {
     const msg = JSON.stringify(data)
@@ -53,18 +48,6 @@ function createApp() {
   })
 
   
-
-app.post('/api/tts', async (req, res) => {
-  const { text } = req.body
-  if (!text) return res.status(400).json({ error: 'text required' })
-  try {
-    const { synthesize } = require('./src/tts')
-    const url = await synthesize(text)
-    res.json({ url })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
 
 app.post('/api/story', async (req, res) => {
   const { title, artist } = req.body

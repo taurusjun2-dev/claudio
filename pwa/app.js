@@ -1,4 +1,3 @@
-const audioTTS = document.getElementById('audio-tts')
 const audioMusic = document.getElementById('audio-music')
 const progressFill = document.getElementById('progress-fill')
 
@@ -80,7 +79,6 @@ function handleWS(msg) {
       break
     case 'dj-response':
     case 'response':
-      if (msg.ttsUrl) enqueueTTS(msg.ttsUrl)
       if (msg.say) showDJSay(msg.say, msg.session_title)
       if (msg.songs?.length) {
         queue = [...msg.songs]
@@ -106,54 +104,23 @@ function handleWS(msg) {
   }
 }
 
-// ── TTS via edge-tts server ──
+// ── TTS via Web Speech API ──
 function splitSentences(text) {
   return text.split(/(?<=[。？！.?!\n])\s*/).filter(s => s.trim())
 }
 
-let _ttsQueue = []
-let _ttsPlaying = false
-
-function enqueueTTS(url) {
-  if (!url) return
-  _ttsQueue.push(url)
-  if (!_ttsPlaying) playNextTTS()
-}
-
-function playNextTTS() {
-  if (!_ttsQueue.length) {
-    _ttsPlaying = false
-    unduckMusic()
-    setNPSpeaking(false)
-    return
-  }
-  _ttsPlaying = true
-  duckMusic()
-  audioTTS.src = _ttsQueue.shift()
-  audioTTS.volume = 1.0
-  audioTTS.play().catch(() => playNextTTS())
-}
-
-audioTTS.onended = () => playNextTTS()
-audioTTS.onerror = () => playNextTTS()
-
-async function speak(text) {
-  if (!text) return
+function speak(text) {
+  if (!text || !window.speechSynthesis) return
+  window.speechSynthesis.cancel()
   _ttsStart = Date.now()
   setNPSpeaking(true)
   duckMusic()
-  try {
-    const resp = await fetch('/api/tts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text })
-    })
-    const data = await resp.json()
-    if (data.url) enqueueTTS(data.url)
-    else { unduckMusic(); setNPSpeaking(false) }
-  } catch {
-    unduckMusic(); setNPSpeaking(false)
-  }
+  const u = new SpeechSynthesisUtterance(text)
+  u.lang = 'zh-CN'
+  u.rate = 1.0
+  u.onend = () => { unduckMusic(); setNPSpeaking(false) }
+  u.onerror = () => { unduckMusic(); setNPSpeaking(false) }
+  speechSynthesis.speak(u)
 }
 
 let _activeSentenceEl = null
