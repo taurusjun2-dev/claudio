@@ -1,4 +1,3 @@
-require('dotenv').config()
 const { chat } = require('./llm')
 const state = require('./state')
 
