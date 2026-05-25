@@ -5,7 +5,7 @@ let mainWindow = null
 let httpServer = null
 
 app.whenReady().then(async () => {
-  // Must be set before any require that touches state.js or tts.js
+  // Must be set before any require that touches state.js
   global.__claudio_db_path = path.join(app.getPath('userData'), 'state.db')
 
   const { createApp } = require('./server')
