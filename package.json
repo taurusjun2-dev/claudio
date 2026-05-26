@@ -15,6 +15,7 @@
     "@ai-sdk/deepseek": "^2.0.35",
     "@ai-sdk/openai": "^2.0.106",
     "@ai-sdk/openai-compatible": "^2.0.48",
+    "agent-loop": "file:../agent-loop",
     "ai": "^6.0.191",
     "axios": "^1.6.0",
     "better-sqlite3": "^11.0.0",

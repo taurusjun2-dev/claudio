@@ -1,4 +1,4 @@
-const { AgentLoop } = require('../../agent-loop/dist')
+const { AgentLoop } = require('agent-loop')
 const { createOpenAICompatible } = require('@ai-sdk/openai-compatible')
 const { z } = require('zod')
 const ncm = require('./ncm')
