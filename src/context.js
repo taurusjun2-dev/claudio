@@ -30,9 +30,15 @@ function getCurrentTime() {
   return `当前时间：${dayOfWeek} ${timeStr}`
 }
 
-function assemble(userInput) {
+function assemble(userInput, nowPlaying = null, storyText = null) {
+  const nowPlayingCtx = nowPlaying
+    ? '\n\n## 当前播放\n正在播放：' + nowPlaying.title + ' — ' + nowPlaying.artist
+      + (storyText ? '\n详情页介绍了：' + storyText : '')
+      + '\n\n重要：如果用户的输入与当前播放的歌曲或刚才的对话内容相关（询问歌曲细节、表达感受、基于介绍提问等），play 返回空数组，只用 say 回应。只有用户明确要换歌时才推荐新歌。'
+    : ''
+
   const systemPrompt = [
-    getPersona(),
+    getPersona() + nowPlayingCtx,
     '---\n## 用户语料\n' + getUserTaste(),
     '---\n## 当前时间\n' + getCurrentTime()
   ].join('\n\n')

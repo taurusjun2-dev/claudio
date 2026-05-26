@@ -115,7 +115,9 @@ async function handle(input) {
 async function handleWithAgent(input) {
   state.addMessage('user', input)
 
-  const { systemPrompt, userPrompt } = context.assemble(input)
+  const nowPlaying = state.getNowPlaying()
+  const storyText = nowPlaying ? (state.getPrefs('story_' + nowPlaying.id) || null) : null
+  const { systemPrompt, userPrompt } = context.assemble(input, nowPlaying, storyText)
 
   const agent = getAgent()
   const plan = await agent.run(userPrompt, {
