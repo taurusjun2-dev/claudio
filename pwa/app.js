@@ -85,9 +85,9 @@ function handleWS(msg) {
         queue = [...msg.songs]
         renderQueue()
         if (_userRequested || !currentSong) playNext()
-        _userRequested = false
-        _autoFetching = false
       }
+      _userRequested = false
+      _autoFetching = false
       break
     case 'auto-enqueue':
       if (msg.songs?.length) { queue.push(...msg.songs); renderQueue() }
