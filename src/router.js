@@ -19,6 +19,7 @@ const DJ_SCHEMA = z.object({
 })
 
 let _agent = null
+let _weatherCache = null
 
 function getAgent() {
   if (_agent) return _agent
@@ -64,11 +65,16 @@ function getAgent() {
       description: '获取当前天气信息',
       schema: z.object({}),
       execute: async () => {
+        const now = Date.now()
+        if (_weatherCache && now - _weatherCache.ts < 10 * 60 * 1000) {
+          return _weatherCache.data
+        }
         try {
           const cfg = state.getPrefs('llm_config') || {}
           const city = cfg.weatherCity || 'Shanghai'
-          const resp = await axios.get(`https://wttr.in/${city}?format=3`, { timeout: 4000 })
-          return resp.data.trim()
+          const resp = await axios.get('https://wttr.in/' + city + '?format=3', { timeout: 4000 })
+          _weatherCache = { data: resp.data.trim(), ts: now }
+          return _weatherCache.data
         } catch { return '天气获取失败' }
       }
     })

@@ -419,6 +419,7 @@ function showStory(text, addToChat = true, immediate = false) {
     const CPS = 4.5
     let charOffset = 0
     sentences.forEach((s, i) => {
+    s = stripMarkdown(s)
       const delay = charOffset * 1000 / CPS
       charOffset += s.length
       setTimeout(() => renderSentence(s, i), delay)

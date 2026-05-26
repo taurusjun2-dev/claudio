@@ -57,4 +57,16 @@ function assemble(userInput, nowPlaying = null, storyText = null) {
   return { systemPrompt, userPrompt }
 }
 
-module.exports = { assemble }
+function assembleForScheduler(task) {
+  const systemPrompt = [
+    getPersona(),
+    '---\n## 用户语料\n' + getUserTaste(),
+    '---\n## 当前时间\n' + getCurrentTime()
+  ].join('\n\n')
+
+  const userPrompt = task + '\n\n以 JSON 格式回复：{"say":"","play":["歌名 歌手",...],"reason":"选曲理由"}'
+
+  return { systemPrompt, userPrompt }
+}
+
+module.exports = { assemble, assembleForScheduler }
