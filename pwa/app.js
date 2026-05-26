@@ -106,6 +106,16 @@ function handleWS(msg) {
 }
 
 // ── TTS ──
+function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '')   // **bold**
+    .replace(/\*(.+?)\*/g, '')          // *italic*
+    .replace(/^#{1,6}\s+/gm, '')           // # headings
+    .replace(/^[-*+]\s+/gm, '')            // - list items
+    .replace(//g, '')           // 
+    .trim()
+}
+
 function splitSentences(text) {
   return text.split(/(?<=[。？！.?!\n])\s*/).filter(s => s.trim())
 }
@@ -360,6 +370,7 @@ function clearNPSentences() {
 // chat is always immediate regardless of immediate flag
 function showStory(text, addToChat = true, immediate = false) {
   if (!text) return
+  text = stripMarkdown(text)
   clearNPSentences()
   const el = document.getElementById('np-sentences')
   if (!el) return
@@ -418,6 +429,7 @@ function showStory(text, addToChat = true, immediate = false) {
 // ── DJ say: progressive sentences ──
 function showDJSay(text, sessionTitle) {
   if (!text) return
+  text = stripMarkdown(text)
   speak(text)
   if (sessionTitle) {
     _sessionTitle = sessionTitle
