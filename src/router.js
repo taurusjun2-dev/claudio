@@ -145,7 +145,7 @@ async function handleWithAgent(input) {
   return {
     type: 'dj-response',
     say: plan.say,
-    songs: state.getQueue(),
+    songs,
     reason: '',
     segue: ''
   }
