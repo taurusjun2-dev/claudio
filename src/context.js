@@ -37,8 +37,14 @@ function assemble(userInput) {
     '---\n## 当前时间\n' + getCurrentTime()
   ].join('\n\n')
 
+  const recentMsgs = state.getRecentMessages(6)
+  const memoryCtx = recentMsgs.length
+    ? recentMsgs.map(m => (m.role === 'user' ? '用户' : 'DJ') + '：' + m.content).join('\n')
+    : '无'
+
   const userPrompt = [
-    '## 用户输入\n' + userInput,
+    '## 最近对话\n' + memoryCtx,
+    '---\n## 用户输入\n' + userInput,
     '---\n以 JSON 格式回复：{"say":"DJ说的话（简体中文，1-2句，只说情绪氛围）","play":["歌名 歌手",...]}\nplay 为空数组表示不推荐新歌。'
   ].join('\n\n')
 

@@ -75,7 +75,12 @@ function getAgent() {
     .use('get_now_playing', {
       description: '获取当前正在播放的歌曲',
       schema: z.object({}),
-      execute: async () => state.getNowPlaying() || null
+      execute: async () => {
+        const song = state.getNowPlaying()
+        if (!song) return null
+        const story = state.getPrefs('story_' + song.id) || null
+        return { ...song, story }
+      }
     })
     .use('get_play_history', {
       description: '获取最近播放记录，用于避免重复推荐',
