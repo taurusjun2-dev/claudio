@@ -108,11 +108,11 @@ function handleWS(msg) {
 // ── TTS ──
 function stripMarkdown(text) {
   return text
-    .replace(/\*\*(.+?)\*\*/g, '')   // **bold**
-    .replace(/\*(.+?)\*/g, '')          // *italic*
-    .replace(/^#{1,6}\s+/gm, '')           // # headings
-    .replace(/^[-*+]\s+/gm, '')            // - list items
-    .replace(//g, '')           // 
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/`(.+?)`/g, '$1')
     .trim()
 }
 
