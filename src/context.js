@@ -83,7 +83,7 @@ async function assemble(userInput, nowPlaying = null, storyText = null) {
     '## 已播记忆\n' + getMemory(),
     '---\n## 用户输入\n' + userInput,
     '---\n## 执行上下文\n' + getExecutionContext(),
-    '---\n用简体中文回复，一两句话，说此刻的情绪和氛围。不要介绍歌曲、不要描述歌词、不要解释选曲理由。不要用"选了X首"等开场白，不要汇报操作结果。'
+    '---\n用简体中文回复，一两句话，只说此刻的情绪和氛围。禁止出现任何歌名、歌手名、歌词描述。禁止说"正在播放"、"选了X首"、"为你推荐"等任何与选曲/操作相关的句子。'
   ].join('\n\n')
 
   return { systemPrompt, userPrompt }
