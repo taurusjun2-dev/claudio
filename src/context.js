@@ -83,7 +83,7 @@ async function assemble(userInput, nowPlaying = null, storyText = null) {
     '## 已播记忆\n' + getMemory(),
     '---\n## 用户输入\n' + userInput,
     '---\n## 执行上下文\n' + getExecutionContext(),
-    '---\n请用中文自然回复，像 DJ 一样直接说歌和情绪，不要汇报工具调用结果（不要说"已加入队列"、"推上去了"、"好的"等确认语）。'
+    '---\n请用中文自然回复，像 DJ 一样直接说歌和情绪。不要用"选了X首"、"以下是"、"为你推荐"等开场白，不要汇报操作结果，直接开口介绍音乐本身。'
   ].join('\n\n')
 
   return { systemPrompt, userPrompt }
