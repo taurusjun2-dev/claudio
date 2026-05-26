@@ -5,7 +5,6 @@ const progressFill = document.getElementById('progress-fill')
 let ws = null
 let queue = []
 let currentSong = null
-let _userRequested = false
 let _autoFetching = false
 let _queueOpen = false
 let _ttsStart = 0
@@ -84,8 +83,7 @@ function handleWS(msg) {
       if (msg.songs?.length) {
         queue = [...msg.songs]
         renderQueue()
-        if (_userRequested || !currentSong) playNext()
-        _userRequested = false
+        if (!currentSong) playNext()
         _autoFetching = false
       }
       break
@@ -659,7 +657,6 @@ async function sendChat() {
   const input = document.getElementById('chat-input')
   const msg = input.value.trim() || input.placeholder
   input.value = ''
-  _userRequested = true
   addUserMsg(msg)
   showLoading()
   try {
