@@ -20,6 +20,14 @@
 - FELT、UI-70、GET IN THE RING
 - 东方爵士编曲：A-ONE、秋霜玉系列
 
+### 史诗管弦 / 暗黑幻想系
+- 梶浦由记（Yuki Kajiura）：Fate/Zero、魔法少女小圆、SAO——虚构语言吟唱 + 弦乐，独树一帜
+- Kalafina：梶浦制作的三人声乐组，空灵和声
+- FictionJunction：梶浦自己的vocal project
+- 澤野弘之（Hiroyuki Sawano）：进击的巨人、Kill la Kill——电子 + 管弦爆发力强
+- 下村陽子（Yoko Shimomura）：Kingdom Hearts、寄生前夜
+- 浜渦正志（Masashi Hamauzu）：Final Fantasy XIII 系列
+
 ### 游戏 OST
 - KEY 系列：Clannad、Little Busters!、Angel Beats!（麻枝准）
 - NieR Automata（岡部啓一）
