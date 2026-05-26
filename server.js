@@ -105,6 +105,7 @@ function createApp() {
       voice: voice !== undefined && voice !== null ? voice : (current.voice || '')
     }
     state.setPrefs('llm_config', updated)
+    router.resetAgent()
     res.json({ ok: true })
   })
 

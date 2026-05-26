@@ -83,7 +83,7 @@ async function assemble(userInput, nowPlaying = null, storyText = null) {
     '## 已播记忆\n' + getMemory(),
     '---\n## 用户输入\n' + userInput,
     '---\n## 执行上下文\n' + getExecutionContext(),
-    '---\n请以 JSON 格式回复：\n{\n  "session_title": "为这次播放起一个富有诗意的英文标题（2-4个词）",\n  "say": "DJ 要说的话（中文，1-3句，自然有温度）",\n  "play": ["歌名 - 歌手", ...],\n  "reason": "内部选曲理由",\n  "segue": "过渡语（可空）"\n}'
+    '---\n请用中文自然回复。如果要推荐音乐，调用 search_and_enqueue 工具，传入搜索关键词列表。'
   ].join('\n\n')
 
   return { systemPrompt, userPrompt }
