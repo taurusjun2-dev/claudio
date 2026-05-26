@@ -1,5 +1,5 @@
 const { AgentLoop } = require('../../agent-loop/dist')
-const { createOpenAI } = require('@ai-sdk/openai')
+const { createOpenAICompatible } = require('@ai-sdk/openai-compatible')
 const { z } = require('zod')
 const ncm = require('./ncm')
 const state = require('./state')
@@ -25,11 +25,12 @@ function getAgent() {
 
   if (!apiKey) throw new Error('API Key \u672a\u8bbe\u7f6e\uff0c\u8bf7\u5728\u8bbe\u7f6e\u9875\u9762\u914d\u7f6e LLM API Key')
 
-  const openai = createOpenAI({
+  const openai = createOpenAICompatible({
+    name: 'deepseek',
     baseURL,
     apiKey,
     fetch: async (url, init) => {
-      // Disable DeepSeek thinking mode to avoid reasoning_content in tool call loops
+      console.log('[Router] calling:', url)
       if (init && init.body) {
         try {
           const body = JSON.parse(init.body)
