@@ -538,6 +538,11 @@ function playNext() {
   setNowPlaying(song)
 }
 
+function prevSong() {
+  if (audioMusic.src) { audioMusic.currentTime = 0; audioMusic.play().catch(() => {}) }
+}
+function nextSong() { playNext() }
+
 function togglePlay() {
   if (audioMusic.paused) {
     if (!audioMusic.src && queue.length) { playNext(); return }
@@ -621,6 +626,25 @@ function fmt(s) {
 }
 
 // ── Queue ──
+function showFavorites() {
+  const favs = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key.startsWith('fav_')) {
+      try { favs.push(JSON.parse(localStorage.getItem(key))) } catch {}
+    }
+  }
+  if (!favs.length) {
+    addSystemMsg('还没有收藏歌曲')
+    return
+  }
+  // Show as system messages in chat
+  addSystemMsg('&#9829; 收藏列表 (' + favs.length + '首)')
+  favs.forEach(f => {
+    addSystemMsg(f.title + ' — ' + f.artist)
+  })
+}
+
 function toggleQueueList() {
   _queueOpen = !_queueOpen
   document.getElementById('queue-list').style.display = _queueOpen ? 'block' : 'none'

@@ -882,14 +882,14 @@
     </div>
 
     <div class="controls-row">
-      <button class="ctrl" onclick="sendCommand('prev')" title="上一首">&#9664;&#9664;</button>
+      <button class="ctrl" onclick="prevSong()" title="上一首">&#9664;&#9664;</button>
       <button class="ctrl" id="btn-play" onclick="togglePlay()">&#9654;</button>
-      <button class="ctrl" onclick="sendCommand('next')" title="下一首">&#9654;&#9654;</button>
+      <button class="ctrl" onclick="nextSong()" title="下一首">&#9654;&#9654;</button>
       <button class="ctrl" onclick="audioMusic.pause(); setPlayState(false)" title="停止">&#9646;&#9646;</button>
       <button class="ctrl" id="btn-fav" onclick="toggleFav()">&#9825;</button>
       <div class="ctrl-sep"></div>
-      <span class="ctrl-label" onclick="toggleQueueList()">HIDE</span>
-      <span class="ctrl-label">FAV</span>
+      <span class="ctrl-label" onclick="toggleQueueList()">QUEUE</span>
+      <span class="ctrl-label" onclick="showFavorites()">FAV</span>
       <div class="vol-wrap">
         VOL
         <input type="range" class="vol-slider" id="vol-slider" min="0" max="100" value="80" oninput="setVolume(this.value)">
