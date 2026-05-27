@@ -8,6 +8,7 @@ const context = require('./context')
 
 const SIMPLE_COMMANDS = {
   '下一首': 'next', '跳过': 'next', 'skip': 'next', 'next': 'next',
+  '上一首': 'prev', 'prev': 'prev',
   '暂停': 'pause', 'pause': 'pause',
   '继续': 'resume', 'resume': 'resume',
   '停': 'pause', '停止': 'pause'
@@ -136,13 +137,23 @@ async function handleWithAgent(input) {
   // Resolve play[] via NCM → enqueue
   const songs = []
   for (const q of (plan.play || []).slice(0, 5)) {
-    const results = await ncm.search(q, 1)
+    console.log('[Router] searching:', q)
+    let results = await ncm.search(q, 1)
+    // Fallback: try without special characters
+    if (results.length === 0) {
+      const fallback = q.replace(/[《》「」『』【】]/g, ' ').replace(/\s+/g, ' ').trim()
+      if (fallback !== q) results = await ncm.search(fallback, 1)
+    }
     if (results.length > 0) {
       const song = results[0]
       const url = await ncm.getSongUrl(song.id)
       songs.push({ ...song, url: url || null })
+      console.log('[Router] found:', song.title, '—', song.artist)
+    } else {
+      console.log('[Router] not found:', q)
     }
   }
+  console.log('[Router] total songs resolved:', songs.length)
   if (songs.length > 0) {
     state.clearQueue()
     state.enqueue(songs)

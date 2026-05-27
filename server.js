@@ -45,6 +45,39 @@ function createApp() {
   app.get('/api/taste', (req, res) => res.json(state.getPrefs()))
   app.get('/api/plan/today', (req, res) => res.json({ plan: state.getTodayPlan() }))
 
+  app.get('/api/mood', async (req, res) => {
+    const now = new Date()
+    const dayOfWeek = ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()]
+    const hour = now.getHours()
+    const month = now.getMonth() + 1
+
+    let weather = ''
+    try {
+      const axios = require('axios')
+      const cfg = state.getPrefs('llm_config') || {}
+      const city = cfg.weatherCity || 'Shanghai'
+      const resp = await axios.get(`https://wttr.in/${city}?format=%C`, { timeout: 3000 })
+      weather = resp.data.trim()
+    } catch {}
+
+    let mood = ''
+    if (dayOfWeek === '周五' && hour >= 17) mood = '周五的夜晚，期待释放一周的疲惫'
+    else if (dayOfWeek === '周六') mood = '周末的松弛感，不需要任何计划'
+    else if (dayOfWeek === '周日' && hour >= 18) mood = '周日傍晚，一点点淡淡的惆怅'
+    else if (dayOfWeek === '周一' && hour < 12) mood = '周一早晨，咖啡和时间都慢一点'
+    else if (weather.includes('rain') || weather.includes('Rain') || weather.includes('雨')) mood = '窗外在下雨，世界变得安静'
+    else if (weather.includes('cloud') || weather.includes('Cloud') || weather.includes('阴')) mood = '阴天，适合沉静下来'
+    else if (weather.includes('sun') || weather.includes('Sun') || weather.includes('晴')) mood = '阳光正好，心情也跟着明亮'
+    else if (hour < 10) mood = '清晨的宁静，属于自己和音乐'
+    else if (hour < 12) mood = '上午的能量正在慢慢积蓄'
+    else if (hour < 14) mood = '午后慵懒，来点温柔的'
+    else if (hour < 18) mood = '下午的节奏，不紧不慢'
+    else if (hour < 22) mood = '夜晚降临，城市开始呼吸'
+    else mood = '深夜，只有音乐和星光'
+
+    res.json({ mood })
+  })
+
   app.post('/api/played', (req, res) => {
     const { song } = req.body
     if (song) state.setNowPlaying(song)
@@ -133,7 +166,9 @@ function createApp() {
   wss.on('connection', ws => {
     ws.send(JSON.stringify({ type: 'connected', now: state.getNowPlaying(), queue: state.getQueue() }))
     if (!state.getNowPlaying() && state.getQueue().length === 0) {
-      router.handle('根据现在的时间和心情，推荐几首歌开始播放').catch(() => {})
+      router.handle('根据现在的时间和心情，推荐几首歌开始播放').catch(err => {
+        console.error('[Auto] initial recommendation failed:', err.message)
+      })
     }
   })
 

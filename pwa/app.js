@@ -99,6 +99,7 @@ function handleWS(msg) {
       break
     case 'command':
       if (msg.action === 'next') playNext()
+      else if (msg.action === 'prev') { audioMusic.currentTime = 0; audioMusic.play().catch(() => {}) }
       else if (msg.action === 'pause') audioMusic.pause()
       else if (msg.action === 'resume') audioMusic.play()
       break
@@ -251,9 +252,12 @@ function openNowPlaying() {
   document.getElementById('np-overlay').classList.add('open')
   if (_wfRaf) cancelAnimationFrame(_wfRaf)
   animateWaveform()
+  // Fetch mood for detail page header
+  fetch('/api/mood').then(r => r.json()).then(d => {
+    if (d.mood) document.getElementById('np-session-title').textContent = d.mood
+  }).catch(() => {})
   if (currentSong) {
     drawNPWaveform(currentSong.id ? parseInt(currentSong.id)%1000 : 42)
-    document.getElementById('np-session-title').textContent = _sessionTitle || currentSong.title || '—'
     document.getElementById('np-song-info').textContent =
       (currentSong.artist || '') + (currentSong.title ? ' — ' + currentSong.title : '')
     // Fetch story if not already loaded for this song
@@ -495,11 +499,15 @@ function setNowPlaying(song) {
   titleEl.style.cursor = 'pointer'
   titleEl.onclick = openNowPlaying
   document.getElementById('song-artist').textContent = song.artist || ''
+  updateFavIcon()
   document.getElementById('np-status').textContent = '· PLAYING'
   document.getElementById('np-bars').classList.remove('paused')
   if (document.getElementById('np-overlay').classList.contains('open')) {
     drawNPWaveform(song.id ? parseInt(song.id)%1000 : 42)
-    document.getElementById('np-session-title').textContent = _sessionTitle || song.title || '—'
+    const moodEl = document.getElementById('np-session-title')
+    if (!moodEl.textContent || moodEl.textContent === '—') {
+      moodEl.textContent = _sessionTitle || song.title || '—'
+    }
     document.getElementById('np-song-info').textContent = (song.artist||'') + ' — ' + (song.title||'')
   }
   if (song.url) {
@@ -544,10 +552,31 @@ function togglePlay() {
 function setVolume(v) { audioMusic.volume = v / 100 }
 
 function toggleFav() {
+  if (!currentSong) return
+  const key = 'fav_' + (currentSong.id || currentSong.title)
+  const isFav = localStorage.getItem(key)
+  if (isFav) {
+    localStorage.removeItem(key)
+    setFavIcon(false)
+  } else {
+    localStorage.setItem(key, JSON.stringify({
+      id: currentSong.id, title: currentSong.title, artist: currentSong.artist
+    }))
+    setFavIcon(true)
+  }
+}
+
+function setFavIcon(on) {
   const btn = document.getElementById('btn-fav')
-  const on = btn.innerHTML.includes('9829')
-  btn.innerHTML = on ? '&#9825;' : '&#9829;'
-  btn.style.color = on ? '' : '#e55'
+  if (!btn) return
+  btn.innerHTML = on ? '&#9829;' : '&#9825;'
+  btn.style.color = on ? '#e55' : ''
+}
+
+function updateFavIcon() {
+  if (!currentSong) return
+  const key = 'fav_' + (currentSong.id || currentSong.title)
+  setFavIcon(!!localStorage.getItem(key))
 }
 
 audioMusic.ontimeupdate = () => {
