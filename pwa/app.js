@@ -614,6 +614,11 @@ audioMusic.ontimeupdate = () => {
 audioMusic.onended = () => {
   setPlayState(false)
   document.getElementById('np-status').textContent = '· IDLE'
+  // Save to history before nulling so prev works
+  if (currentSong) {
+    _playHistory.push(currentSong)
+    if (_playHistory.length > 50) _playHistory.shift()
+  }
   currentSong = null
   playNext()
 }
@@ -730,7 +735,9 @@ async function sendChat() {
   const input = document.getElementById('chat-input')
   const msg = input.value.trim() || input.placeholder
   input.value = ''
-  _userRequested = true
+  // Only auto-play new songs if user explicitly requested music
+  const isMusicRequest = /来一?[首点些]|推荐|换[首歌]|想听|放[首歌点]|播[放歌]|skip|next|下一首|来点/.test(msg)
+  _userRequested = isMusicRequest
   addUserMsg(msg)
   showLoading()
   try {
