@@ -21,7 +21,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          files: dist/*.dmg dist/*.blockmap dist/*.yml
+          files: dist/*.dmg dist/*.blockmap dist/*.yml dist/mac-arm64/*.dmg dist/mac-arm64/*.blockmap dist/mac-arm64/*.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
