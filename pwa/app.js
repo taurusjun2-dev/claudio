@@ -5,6 +5,7 @@ const progressFill = document.getElementById('progress-fill')
 let ws = null
 let queue = []
 let currentSong = null
+let _playHistory = []
 let _userRequested = false
 let _autoFetching = false
 let _queueOpen = false
@@ -528,6 +529,11 @@ function setPlayState(playing) {
 
 function playNext() {
   if (!queue.length) { autoNext(); return }
+  // Save current to history before switching
+  if (currentSong) {
+    _playHistory.push(currentSong)
+    if (_playHistory.length > 50) _playHistory.shift()
+  }
   const song = queue.shift()
   renderQueue()
   fetch('/api/played', {
@@ -539,7 +545,18 @@ function playNext() {
 }
 
 function prevSong() {
-  if (audioMusic.src) { audioMusic.currentTime = 0; audioMusic.play().catch(() => {}) }
+  if (!_playHistory.length) { audioMusic.currentTime = 0; audioMusic.play().catch(() => {}); return }
+  // Push current song to front of queue
+  if (currentSong) queue.unshift(currentSong)
+  const prev = _playHistory.pop()
+  // Briefly set as current to avoid re-adding to history
+  currentSong = null
+  fetch('/api/played', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ song: prev })
+  })
+  addSystemMsg('Now playing: ' + prev.title + ' — ' + prev.artist)
+  setNowPlaying(prev)
 }
 function nextSong() { playNext() }
 
