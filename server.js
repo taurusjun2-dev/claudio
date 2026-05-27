@@ -67,9 +67,11 @@ function createApp() {
       const resp = await axios.post((cfg.url || 'https://api.deepseek.com') + '/chat/completions', {
         model: cfg.model || 'deepseek-v4-flash',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 50, temperature: 0.9
+        max_tokens: 50, temperature: 0.9,
+        thinking: { type: 'disabled' }
       }, { headers: { Authorization: 'Bearer ' + (cfg.apiKey || '') }, timeout: 8000 })
-      _moodCache = { text: resp.data.choices[0].message.content.trim(), at: Date.now() }
+      const text = (resp.data.choices[0].message.content || '').trim()
+      _moodCache = { text: text || '此刻，只需要一首好歌', at: Date.now() }
       res.json({ mood: _moodCache.text })
     } catch (e) {
       res.json({ mood: '此刻，只需要一首好歌' })
