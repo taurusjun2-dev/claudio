@@ -45,37 +45,97 @@ function createApp() {
   app.get('/api/taste', (req, res) => res.json(state.getPrefs()))
   app.get('/api/plan/today', (req, res) => res.json({ plan: state.getTodayPlan() }))
 
+  // Cached weather for mood (refresh every 10 min)
+  let _moodWeather = ''
+  let _moodWeatherAt = 0
   app.get('/api/mood', async (req, res) => {
     const now = new Date()
     const dayOfWeek = ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()]
     const hour = now.getHours()
-    const month = now.getMonth() + 1
 
-    let weather = ''
-    try {
-      const axios = require('axios')
-      const cfg = state.getPrefs('llm_config') || {}
-      const city = cfg.weatherCity || 'Shanghai'
-      const resp = await axios.get(`https://wttr.in/${city}?format=%C`, { timeout: 3000 })
-      weather = resp.data.trim()
-    } catch {}
+    // Refresh weather cache every 10 min
+    if (Date.now() - _moodWeatherAt > 600000) {
+      try {
+        const axios = require('axios')
+        const cfg = state.getPrefs('llm_config') || {}
+        const city = cfg.weatherCity || 'Shanghai'
+        const resp = await axios.get(`https://wttr.in/${city}?format=%C`, { timeout: 3000 })
+        _moodWeather = resp.data.trim()
+        _moodWeatherAt = Date.now()
+      } catch {}
+    }
 
-    let mood = ''
-    if (dayOfWeek === '周五' && hour >= 17) mood = '周五的夜晚，期待释放一周的疲惫'
-    else if (dayOfWeek === '周六') mood = '周末的松弛感，不需要任何计划'
-    else if (dayOfWeek === '周日' && hour >= 18) mood = '周日傍晚，一点点淡淡的惆怅'
-    else if (dayOfWeek === '周一' && hour < 12) mood = '周一早晨，咖啡和时间都慢一点'
-    else if (weather.includes('rain') || weather.includes('Rain') || weather.includes('雨')) mood = '窗外在下雨，世界变得安静'
-    else if (weather.includes('cloud') || weather.includes('Cloud') || weather.includes('阴')) mood = '阴天，适合沉静下来'
-    else if (weather.includes('sun') || weather.includes('Sun') || weather.includes('晴')) mood = '阳光正好，心情也跟着明亮'
-    else if (hour < 10) mood = '清晨的宁静，属于自己和音乐'
-    else if (hour < 12) mood = '上午的能量正在慢慢积蓄'
-    else if (hour < 14) mood = '午后慵懒，来点温柔的'
-    else if (hour < 18) mood = '下午的节奏，不紧不慢'
-    else if (hour < 22) mood = '夜晚降临，城市开始呼吸'
-    else mood = '深夜，只有音乐和星光'
+    const w = _moodWeather
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
-    res.json({ mood })
+    let pool = []
+    if (dayOfWeek === '周五' && hour >= 17) pool = [
+      '周五的夜晚，期待释放一周的疲惫',
+      'TGIF — 周末就在眼前',
+      '一周的忙碌到此为止，剩下的交给音乐',
+    ]
+    else if (dayOfWeek === '周六') pool = [
+      '周末的松弛感，不需要任何计划',
+      '周六，阳光和时间都属于自己',
+      '慵懒的休息日，什么都慢一点',
+    ]
+    else if (dayOfWeek === '周日' && hour >= 18) pool = [
+      '周日傍晚，一点点淡淡的惆怅',
+      '周末快要结束了，再听一首吧',
+      '明天又是新的一周，今晚先放松',
+    ]
+    else if (dayOfWeek === '周一' && hour < 12) pool = [
+      '周一早晨，咖啡和时间都慢一点',
+      '新的一周，从一首好歌开始',
+      '周一需要温柔的能量',
+    ]
+    else if (w.includes('rain') || w.includes('Rain') || w.includes('雨')) pool = [
+      '窗外在下雨，世界变得安静',
+      '雨天适合一个人发呆',
+      '雨滴敲打窗台，音乐是最好的陪伴',
+    ]
+    else if (w.includes('cloud') || w.includes('Cloud') || w.includes('阴')) pool = [
+      '阴天，适合沉静下来',
+      '云层很厚，但心情可以轻盈',
+      '灰蒙蒙的天，来点温暖的声音',
+    ]
+    else if (w.includes('sun') || w.includes('Sun') || w.includes('晴')) pool = [
+      '阳光正好，心情也跟着明亮',
+      '晴朗的日子应该有好音乐',
+      '好天气，适合来点轻快的',
+    ]
+    else if (hour < 10) pool = [
+      '清晨的宁静，属于自己和音乐',
+      '早安，新的一天开始了',
+      '晨光微熹，用音乐唤醒自己',
+    ]
+    else if (hour < 12) pool = [
+      '上午的能量正在慢慢积蓄',
+      '专注的上午，让音乐陪伴',
+      '上午的节奏，不急不缓',
+    ]
+    else if (hour < 14) pool = [
+      '午后慵懒，来点温柔的',
+      '午间片刻，让思绪飘一会',
+      '午后的阳光，需要一点旋律',
+    ]
+    else if (hour < 18) pool = [
+      '下午的节奏，不紧不慢',
+      '下午茶时间，给自己一首歌',
+      '傍晚前的宁静时刻',
+    ]
+    else if (hour < 22) pool = [
+      '夜晚降临，城市开始呼吸',
+      '华灯初上，属于夜晚的音乐',
+      '夜色正好，适合放松下来',
+    ]
+    else pool = [
+      '深夜，只有音乐和星光',
+      '夜深了，世界安静下来',
+      '凌晨时分，和自己独处',
+    ]
+
+    res.json({ mood: pick(pool) })
   })
 
   app.post('/api/played', (req, res) => {
