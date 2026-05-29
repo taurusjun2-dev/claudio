@@ -78,16 +78,6 @@ function handleWS(msg) {
     case 'now-playing':
       if (msg.song) setNowPlaying(msg.song)
       break
-    case 'dj-response':
-    case 'response':
-      if (msg.say) showDJSay(msg.say, msg.session_title)
-      if (msg.songs?.length) {
-        queue = [...msg.songs]
-        renderQueue()
-        playNext()
-      }
-      _autoFetching = false
-      break
     case 'auto-enqueue':
       if (msg.songs?.length) { queue.push(...msg.songs); renderQueue() }
       if (!currentSong) playNext()
@@ -635,6 +625,7 @@ async function autoNext() {
       body: JSON.stringify({ message: '推荐几首我喜欢的歌' })
     })
     const data = await resp.json()
+    if (data.say) showDJSay(data.say, data.session_title)
     if (data.songs?.length) {
       queue = [...data.songs]
       renderQueue()
@@ -750,7 +741,13 @@ async function sendChat() {
     })
     const data = await resp.json()
     hideLoading()
-    if (data.error) addSystemMsg('错误：' + data.error)
+    if (data.error) { addSystemMsg('错误：' + data.error); return }
+    if (data.say) showDJSay(data.say, data.session_title)
+    if (data.songs?.length) {
+      queue = [...data.songs]
+      renderQueue()
+      playNext()
+    }
   } catch {
     hideLoading()
     addSystemMsg('连接出错，请稍后重试')
