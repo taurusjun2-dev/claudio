@@ -626,13 +626,21 @@ audioMusic.onerror = () => {
   setTimeout(playNext, 1500)
 }
 
-function autoNext() {
+async function autoNext() {
   if (_autoFetching) return
   _autoFetching = true
-  fetch('/api/chat', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: '推荐几首我喜欢的歌' })
-  }).finally(() => { _autoFetching = false })
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: '推荐几首我喜欢的歌' })
+    })
+    const data = await resp.json()
+    if (data.songs?.length) {
+      queue = [...data.songs]
+      renderQueue()
+      playNext()
+    }
+  } catch {} finally { _autoFetching = false }
 }
 
 function seek(e) {
