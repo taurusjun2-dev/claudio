@@ -618,12 +618,7 @@ audioMusic.onended = () => {
   playNext()
 }
 
-audioMusic.onerror = () => {
-  if (audioMusic.error?.code === 1) return
-  setTimeout(playNext, 1500)
-}
-
-async function autoNext() {
+audioMusic.onerror = () => {}async function autoNext() {
   if (_autoFetching) return
   _autoFetching = true
   try {
