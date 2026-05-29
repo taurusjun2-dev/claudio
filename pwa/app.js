@@ -736,7 +736,7 @@ async function sendChat() {
   const msg = input.value.trim() || input.placeholder
   input.value = ''
   // Only auto-play new songs if user explicitly requested music
-  const isMusicRequest = /来一?[首点些]|推荐|换[首歌]|想听|放[首歌点]|播[放歌]|skip|next|下一首|来点/.test(msg)
+  const isMusicRequest = /来一?[首点些]|推荐|换[首歌]|想听|放[首歌点]|播[放歌]|skip|next|下一首|来点|不够|换一|不好听|不对|再[来换]|切[歌换]/.test(msg)
   _userRequested = isMusicRequest
   addUserMsg(msg)
   showLoading()
