@@ -34,14 +34,10 @@ async function getSongUrl(songId) {
   try {
     const { song_url } = await getApi()
     if (!song_url) return null
-    // Try high quality first, then fall back to standard
     for (const br of [320000, 128000]) {
       const result = await song_url({ id: songId, br })
       const data = result.body?.data?.[0]
-      if (data?.url) {
-        // Skip if it's just a 30s preview (freeTrial)
-        if (!data.freeTrialInfo) return data.url
-      }
+      if (data?.url && !data.freeTrialInfo) return data.url
     }
     return null
   } catch (err) {

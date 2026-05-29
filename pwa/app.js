@@ -504,7 +504,11 @@ function setNowPlaying(song) {
     audioMusic.src = song.url
     audioMusic.load()
     audioMusic.volume = document.getElementById('vol-slider').value / 100
-    audioMusic.play().then(() => setPlayState(true)).catch(() => setPlayState(false))
+    audioMusic.play().then(() => setPlayState(true)).catch(() => {
+      setPlayState(false)
+      addSystemMsg('播放失败: ' + song.title + '，尝试下一首')
+      setTimeout(() => playNext(), 500)
+    })
   } else {
     addSystemMsg('无法播放: ' + song.title + '，尝试下一首')
     setTimeout(() => playNext(), 500)
