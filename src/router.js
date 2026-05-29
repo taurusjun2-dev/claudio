@@ -123,21 +123,35 @@ async function handle(input) {
   return handleWithAgent(trimmed)
 }
 
+// Quick LLM call with JSON output (no agent/tools)
+async function quickJSON(systemPrompt, userPrompt, schema, temp = 0) {
+  const cfg = state.getPrefs('llm_config') || {}
+  const axios = require('axios')
+  const resp = await axios.post((cfg.url || 'https://api.deepseek.com') + '/chat/completions', {
+    model: cfg.model || 'deepseek-v4-flash',
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    max_tokens: 200, temperature: temp,
+    response_format: { type: 'json_object' },
+    thinking: { type: 'disabled' }
+  }, {
+    headers: { Authorization: 'Bearer ' + (cfg.apiKey || '') },
+    timeout: 15000
+  })
+  const text = resp.data.choices[0].message.content
+  try { return JSON.parse(text) } catch { return null }
+}
+
 // Layer 1: Classify intent
 async function classifyIntent(input, systemPrompt) {
-  const llm = getLLM()
-  const cfg = state.getPrefs('llm_config') || {}
-  const agent = new AgentLoop({
-    llm: llm(cfg.model || 'deepseek-chat'),
+  const result = await quickJSON(
     systemPrompt,
-    memory: { windowSize: 3 },
-    maxSteps: 1
-  })
-  const result = await agent.run(
-    '用户说：' + input + '\n判断意图：chat（闲聊/表达感受）还是 recommend（想听歌/换歌）？',
-    { outputSchema: INTENT_SCHEMA }
+    '用户说：' + input + '\n判断意图（输出JSON）：{"intent":"chat"} 或 {"intent":"recommend"}',
+    INTENT_SCHEMA
   )
-  return result.intent
+  return result?.intent || 'chat'
 }
 
 async function resolveSongs(queries) {
@@ -168,7 +182,7 @@ async function handleWithAgent(input) {
 
   const nowPlaying = state.getNowPlaying()
   const storyText = nowPlaying ? (state.getPrefs('story_' + nowPlaying.id) || null) : null
-  const { systemPrompt } = context.assemble(input, nowPlaying, storyText)
+  const { systemPrompt, userPrompt } = context.assemble(input, nowPlaying, storyText)
 
   // Layer 1: Intent classification
   const intent = await classifyIntent(input, systemPrompt)
@@ -176,22 +190,19 @@ async function handleWithAgent(input) {
 
   if (intent === 'chat') {
     // Layer 2a: Chat — just respond, no songs
-    const cfg = state.getPrefs('llm_config') || {}
-    const llm = getLLM()
-    const chatAgent = new AgentLoop({
-      llm: llm(cfg.model || 'deepseek-chat'),
+    const result = await quickJSON(
       systemPrompt,
-      memory: { windowSize: 3 },
-      maxSteps: 1
-    })
-    const result = await chatAgent.run('用户说：' + input + '\n闲聊回应，不推荐歌曲。', { outputSchema: CHAT_SCHEMA })
-    state.addMessage('assistant', result.say)
-    return { type: 'dj-response', say: result.say, songs: [], reason: '', segue: '' }
+      '用户说：' + input + '\n闲聊回应（输出JSON）：{"say":"DJ的回复"}',
+      CHAT_SCHEMA
+    )
+    const say = result?.say || '嗯，我在听'
+    state.addMessage('assistant', say)
+    return { type: 'dj-response', say, songs: [], reason: '', segue: '' }
   }
 
   // Layer 2b: Recommend — full agent with tools + song resolution
   const agent = getAgent()
-  const plan = await agent.run(input, {
+  const plan = await agent.run(userPrompt, {
     systemPromptOverride: systemPrompt,
     outputSchema: RECOMMEND_SCHEMA
   })
