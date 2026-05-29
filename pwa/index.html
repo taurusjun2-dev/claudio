@@ -580,6 +580,18 @@
     .sf textarea:focus { border-color: var(--text3); }
     .btn-text { background: none; border: none; color: var(--text2); font-size: 12px; cursor: pointer; padding: 8px; margin-top: -4px; width: 100%; text-align: center; }
     .btn-text:hover { color: var(--text); }
+    .taste-toolbar { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+    .md-preview { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; font-size: 13px; line-height: 1.7; min-height: 40px; white-space: pre-wrap; overflow-wrap: break-word; }
+    .md-preview h1, .md-preview h2, .md-preview h3 { font-size: 14px; font-weight: 600; margin: 8px 0 4px; }
+    .md-preview h1:first-child, .md-preview h2:first-child, .md-preview h3:first-child { margin-top: 0; }
+    .md-preview ul, .md-preview ol { padding-left: 18px; margin: 4px 0; }
+    .md-preview li { margin: 2px 0; }
+    .md-preview strong { font-weight: 600; }
+    .md-preview p { margin: 4px 0; }
+    .md-preview em { font-style: italic; }
+    .taste-edit { display: none; }
+    .taste-edit.show { display: block; }
+    .md-preview.hidden { display: none; }
 
     .sf { display: flex; flex-direction: column; gap: 5px; }
     .sf label { font-size: 10px; letter-spacing: 1px; color: var(--text2); text-transform: uppercase; }
@@ -1039,21 +1051,30 @@
 
     <!-- Taste Tab -->
     <div id="stab-taste" class="stab-content">
+    <div class="taste-toolbar">
+      <button class="stab active" onclick="toggleTasteMode('preview')">预览</button>
+      <button class="stab" onclick="toggleTasteMode('edit')">编辑</button>
+    </div>
+
     <div class="sf">
       <label>喜欢的风格 &amp; 艺人</label>
-      <textarea id="taste-liked" rows="4" placeholder="用自然语言描述你喜欢的音乐风格和艺人..."></textarea>
+      <div id="taste-liked-preview" class="md-preview"></div>
+      <textarea id="taste-liked" rows="8" class="taste-edit" placeholder="用 Markdown 描述你喜欢的音乐风格和艺人..." style="display:none"></textarea>
     </div>
     <div class="sf">
       <label>不喜欢的</label>
-      <textarea id="taste-disliked" rows="3" placeholder="不喜欢的风格、类型、特点..."></textarea>
+      <div id="taste-disliked-preview" class="md-preview"></div>
+      <textarea id="taste-disliked" rows="5" class="taste-edit" placeholder="不喜欢的风格、类型、特点..." style="display:none"></textarea>
     </div>
     <div class="sf">
       <label>日常节律</label>
-      <textarea id="taste-routines" rows="4" placeholder="工作日和周末各时段的音乐偏好..."></textarea>
+      <div id="taste-routines-preview" class="md-preview"></div>
+      <textarea id="taste-routines" rows="8" class="taste-edit" placeholder="工作日和周末各时段的音乐偏好..." style="display:none"></textarea>
     </div>
     <div class="sf">
       <label>天气 / 情绪规则</label>
-      <textarea id="taste-moodRules" rows="3" placeholder="不同天气、情绪对应的音乐风格..."></textarea>
+      <div id="taste-moodRules-preview" class="md-preview"></div>
+      <textarea id="taste-moodRules" rows="5" class="taste-edit" placeholder="不同天气、情绪对应的音乐风格..." style="display:none"></textarea>
     </div>
     <div class="sf" id="taste-favs-section" style="display:none">
       <label>收藏歌曲</label>

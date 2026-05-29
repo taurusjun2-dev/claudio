@@ -889,13 +889,59 @@ async function testLLM() {
 }
 
 // ── Taste ──
+let _tasteMode = 'preview'
+
+function renderMarkdown(text) {
+  if (!text) return ''
+  return text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^\- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+    .replace(/\n\n+/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^(?!<[hul])/gm, '<p>')
+    .replace(/([^>])$/, '$1</p>')
+    .replace(/<p><\/p>/g, '')
+    .replace(/<\/p><p>/g, '</p>\n<p>')
+}
+
+function toggleTasteMode(mode) {
+  _tasteMode = mode
+  document.querySelectorAll('#stab-taste .stab').forEach(b =>
+    b.classList.toggle('active', b.textContent === (mode === 'preview' ? '预览' : '编辑'))
+  )
+  const fields = ['liked', 'disliked', 'routines', 'moodRules']
+  fields.forEach(id => {
+    const preview = document.getElementById('taste-' + id + '-preview')
+    const editor = document.getElementById('taste-' + id)
+    if (mode === 'edit') {
+      preview.style.display = 'none'
+      editor.style.display = 'block'
+      editor.value = editor._raw || ''
+    } else {
+      editor._raw = editor.value
+      preview.innerHTML = renderMarkdown(editor.value)
+      preview.style.display = 'block'
+      editor.style.display = 'none'
+    }
+  })
+}
+
 async function loadTaste() {
   try {
     const t = await fetch('/api/taste').then(r => r.json())
-    document.getElementById('taste-liked').value = t.liked || ''
-    document.getElementById('taste-disliked').value = t.disliked || ''
-    document.getElementById('taste-routines').value = t.routines || ''
-    document.getElementById('taste-moodRules').value = t.moodRules || ''
+    const fields = ['liked', 'disliked', 'routines', 'moodRules']
+    fields.forEach(id => {
+      const val = t[id] || ''
+      document.getElementById('taste-' + id).value = val
+      document.getElementById('taste-' + id + '-preview').innerHTML = renderMarkdown(val)
+    })
     // Show favorite songs from localStorage
     const favs = []
     for (let i = 0; i < localStorage.length; i++) {
@@ -914,6 +960,7 @@ async function loadTaste() {
     } else {
       sec.style.display = 'none'
     }
+    toggleTasteMode('preview')
   } catch {}
 }
 
