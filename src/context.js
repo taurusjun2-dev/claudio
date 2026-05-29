@@ -13,7 +13,26 @@ function getPersona() {
   return readFile(path.join(PROMPTS_DIR, 'dj-persona.md'))
 }
 
+function getDefaultTaste() {
+  return {
+    liked: readFile(path.join(USER_DIR, 'taste.md')),
+    disliked: '',
+    routines: readFile(path.join(USER_DIR, 'routines.md')),
+    moodRules: readFile(path.join(USER_DIR, 'mood-rules.md'))
+  }
+}
+
 function getUserTaste() {
+  const profile = state.getPrefs('taste_profile')
+  if (profile && profile.liked) {
+    const parts = []
+    if (profile.liked) parts.push('## 喜欢的风格\n' + profile.liked)
+    if (profile.disliked) parts.push('## 不喜欢的\n' + profile.disliked)
+    if (profile.routines) parts.push('## 日常节律\n' + profile.routines)
+    if (profile.moodRules) parts.push('## 情绪规则\n' + profile.moodRules)
+    return parts.join('\n\n')
+  }
+  // Fallback to files
   return ['taste.md', 'routines.md', 'mood-rules.md']
     .map(f => {
       const c = readFile(path.join(USER_DIR, f))
@@ -69,4 +88,4 @@ function assembleForScheduler(task) {
   return { systemPrompt, userPrompt }
 }
 
-module.exports = { assemble, assembleForScheduler }
+module.exports = { assemble, assembleForScheduler, getDefaultTaste }

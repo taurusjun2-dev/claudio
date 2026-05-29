@@ -42,7 +42,19 @@ function createApp() {
 
   app.get('/api/now', (req, res) => res.json(state.getNowPlaying()))
   app.get('/api/next', (req, res) => res.json({ queue: state.getQueue() }))
-  app.get('/api/taste', (req, res) => res.json(state.getPrefs()))
+  app.get('/api/taste', (req, res) => {
+    const profile = state.getPrefs('taste_profile') || {}
+    if (!profile.liked) {
+      const defaults = require('./src/context').getDefaultTaste()
+      return res.json(defaults)
+    }
+    res.json(profile)
+  })
+  app.post('/api/taste', (req, res) => {
+    const { liked, disliked, routines, moodRules } = req.body
+    state.setPrefs('taste_profile', { liked, disliked, routines, moodRules })
+    res.json({ ok: true })
+  })
   app.get('/api/plan/today', (req, res) => res.json({ plan: state.getTodayPlan() }))
 
   // Cached mood (refresh every 10 min)

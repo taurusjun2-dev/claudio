@@ -805,8 +805,16 @@ function loadVoices() {
   }).join('')
 }
 
+function switchSettingsTab(name) {
+  document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.textContent === (name === 'llm' ? 'LLM' : '口味')))
+  document.querySelectorAll('.stab-content').forEach(d => d.classList.remove('active'))
+  document.getElementById('stab-' + name).classList.add('active')
+  if (name === 'taste') loadTaste()
+}
+
 function openSettings() {
   document.getElementById('settings-overlay').classList.add('open')
+  switchSettingsTab('llm')
   loadSettings()
   loadVoices()
 }
@@ -878,6 +886,69 @@ async function testLLM() {
     if (!r.ok) setSettingsDot(true)
   } catch (e) { status.textContent = '失败: ' + e.message; status.style.color = '#e55' }
   finally { btn.disabled = false; btn.textContent = '测试连接'; setTimeout(() => { status.textContent = ''; status.style.color = '' }, 5000) }
+}
+
+// ── Taste ──
+async function loadTaste() {
+  try {
+    const t = await fetch('/api/taste').then(r => r.json())
+    document.getElementById('taste-liked').value = t.liked || ''
+    document.getElementById('taste-disliked').value = t.disliked || ''
+    document.getElementById('taste-routines').value = t.routines || ''
+    document.getElementById('taste-moodRules').value = t.moodRules || ''
+    // Show favorite songs from localStorage
+    const favs = []
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key.startsWith('fav_')) {
+        try { favs.push(JSON.parse(localStorage.getItem(key))) } catch {}
+      }
+    }
+    const sec = document.getElementById('taste-favs-section')
+    const list = document.getElementById('taste-favs-list')
+    if (favs.length) {
+      sec.style.display = 'flex'
+      list.innerHTML = favs.map(f =>
+        '<div class="taste-fav-row"><span>' + f.title + ' — ' + f.artist + '</span><button class="btn-text" onclick="removeFav(\'' + (f.id || f.title) + '\')" style="width:auto;padding:2px 6px">✕</button></div>'
+      ).join('')
+    } else {
+      sec.style.display = 'none'
+    }
+  } catch {}
+}
+
+async function saveTaste() {
+  const status = document.getElementById('settings-status')
+  try {
+    const r = await fetch('/api/taste', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        liked: document.getElementById('taste-liked').value,
+        disliked: document.getElementById('taste-disliked').value,
+        routines: document.getElementById('taste-routines').value,
+        moodRules: document.getElementById('taste-moodRules').value
+      })
+    }).then(r => r.json())
+    if (r.ok) { status.textContent = '口味已保存'; setTimeout(() => status.textContent = '', 2000) }
+  } catch (e) { status.textContent = '保存失败: ' + e.message }
+}
+
+async function resetTaste() {
+  const status = document.getElementById('settings-status')
+  try {
+    // Delete from DB, reload from files
+    await fetch('/api/taste', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ liked: '', disliked: '', routines: '', moodRules: '' })
+    })
+    loadTaste()
+    status.textContent = '已恢复默认'; setTimeout(() => status.textContent = '', 2000)
+  } catch (e) { status.textContent = '失败: ' + e.message }
+}
+
+function removeFav(id) {
+  localStorage.removeItem('fav_' + id)
+  loadTaste()
 }
 
 // ── Init ──

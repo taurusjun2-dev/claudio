@@ -571,6 +571,15 @@
       background: none; border: none;
       color: var(--text2); font-size: 22px; cursor: pointer;
     }
+    .settings-tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .stab { flex: 1; background: none; border: none; color: var(--text2); padding: 8px 12px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+    .stab.active { color: var(--text); border-bottom-color: var(--text); }
+    .stab-content { display: none; flex-direction: column; gap: 12px; padding-top: 4px; }
+    .stab-content.active { display: flex; }
+    .sf textarea { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-size: 13px; outline: none; resize: vertical; font-family: inherit; line-height: 1.6; }
+    .sf textarea:focus { border-color: var(--text3); }
+    .btn-text { background: none; border: none; color: var(--text2); font-size: 12px; cursor: pointer; padding: 8px; margin-top: -4px; width: 100%; text-align: center; }
+    .btn-text:hover { color: var(--text); }
 
     .sf { display: flex; flex-direction: column; gap: 5px; }
     .sf label { font-size: 10px; letter-spacing: 1px; color: var(--text2); text-transform: uppercase; }
@@ -989,14 +998,20 @@
 <div class="settings-overlay" id="settings-overlay" onclick="closeSettingsOutside(event)">
   <div class="settings-sheet">
     <button class="settings-close" onclick="closeSettings()">&#10005;</button>
-    <h2>设置</h2>
+    <div class="settings-tabs">
+      <button class="stab active" onclick="switchSettingsTab('llm')">LLM</button>
+      <button class="stab" onclick="switchSettingsTab('taste')">口味</button>
+    </div>
+
+    <!-- LLM Tab -->
+    <div id="stab-llm" class="stab-content active">
     <div class="sf">
       <label>API 地址</label>
-      <input type="url" id="setting-url" placeholder="https://api.deepseek.com/v1" />
+      <input type="url" id="setting-url" placeholder="https://api.deepseek.com" />
     </div>
     <div class="sf">
       <label>模型名称</label>
-      <input type="text" id="setting-model" placeholder="deepseek-chat" />
+      <input type="text" id="setting-model" placeholder="deepseek-v4-flash" />
     </div>
     <div class="sf">
       <label>API Key</label>
@@ -1020,6 +1035,34 @@
     </div>
     <button class="btn-primary" onclick="saveSettings()">保存设置</button>
     <button class="btn-secondary" onclick="testLLM()">测试连接</button>
+    </div>
+
+    <!-- Taste Tab -->
+    <div id="stab-taste" class="stab-content">
+    <div class="sf">
+      <label>喜欢的风格 &amp; 艺人</label>
+      <textarea id="taste-liked" rows="4" placeholder="用自然语言描述你喜欢的音乐风格和艺人..."></textarea>
+    </div>
+    <div class="sf">
+      <label>不喜欢的</label>
+      <textarea id="taste-disliked" rows="3" placeholder="不喜欢的风格、类型、特点..."></textarea>
+    </div>
+    <div class="sf">
+      <label>日常节律</label>
+      <textarea id="taste-routines" rows="4" placeholder="工作日和周末各时段的音乐偏好..."></textarea>
+    </div>
+    <div class="sf">
+      <label>天气 / 情绪规则</label>
+      <textarea id="taste-moodRules" rows="3" placeholder="不同天气、情绪对应的音乐风格..."></textarea>
+    </div>
+    <div class="sf" id="taste-favs-section" style="display:none">
+      <label>收藏歌曲</label>
+      <div id="taste-favs-list"></div>
+    </div>
+    <button class="btn-primary" onclick="saveTaste()">保存口味</button>
+    <button class="btn-text" onclick="resetTaste()">恢复默认</button>
+    </div>
+
     <div id="settings-status"></div>
   </div>
 </div>
