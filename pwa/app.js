@@ -6,7 +6,6 @@ let ws = null
 let queue = []
 let currentSong = null
 let _playHistory = []
-let _userRequested = false
 let _autoFetching = false
 let _queueOpen = false
 let _ttsStart = 0
@@ -85,9 +84,8 @@ function handleWS(msg) {
       if (msg.songs?.length) {
         queue = [...msg.songs]
         renderQueue()
-        if (_userRequested || !currentSong) playNext()
+        playNext()
       }
-      _userRequested = false
       _autoFetching = false
       break
     case 'auto-enqueue':
@@ -735,9 +733,6 @@ async function sendChat() {
   const input = document.getElementById('chat-input')
   const msg = input.value.trim() || input.placeholder
   input.value = ''
-  // Only auto-play new songs if user explicitly requested music
-  const isMusicRequest = /来一?[首点些]|推荐|换[首歌]|想听|放[首歌点]|播[放歌]|skip|next|下一首|来点|不够|换一|不好听|不对|再[来换]|切[歌换]/.test(msg)
-  _userRequested = isMusicRequest
   addUserMsg(msg)
   showLoading()
   try {
