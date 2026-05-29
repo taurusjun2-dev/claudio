@@ -633,7 +633,7 @@ function autoNext() {
   _autoFetching = true
   fetch('/api/chat', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: '继续，根据刚才的心情再来一首' })
+    body: JSON.stringify({ message: '推荐几首我喜欢的歌' })
   }).finally(() => { _autoFetching = false })
 }
 

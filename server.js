@@ -179,7 +179,7 @@ function createApp() {
   wss.on('connection', ws => {
     ws.send(JSON.stringify({ type: 'connected', now: state.getNowPlaying(), queue: state.getQueue() }))
     if (!state.getNowPlaying() && state.getQueue().length === 0) {
-      router.handle('根据现在的时间和心情，推荐几首歌开始播放').catch(err => {
+      router.handle('推荐几首我喜欢的歌').catch(err => {
         console.error('[Auto] initial recommendation failed:', err.message)
       })
     }

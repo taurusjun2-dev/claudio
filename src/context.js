@@ -70,7 +70,7 @@ function assemble(userInput, nowPlaying = null, storyText = null) {
   const userPrompt = [
     '## 最近对话\n' + memoryCtx,
     '---\n## 用户输入\n' + userInput,
-    '---\n以 JSON 格式回复：{"say":"DJ说的话（简体中文，1-2句，只说情绪氛围）","play":["歌名 歌手",...]}\nplay 为空数组表示不推荐新歌。'
+    '---\n用户要求推荐音乐时，根据用户语料中的喜好选出具体的艺人或风格名，放入 play 数组，格式["艺人名", "歌名 歌手"]。play 为空数组表示不推荐新歌。以 JSON 回复：{"say":"DJ说的话","play":[...]}'
   ].join('\n\n')
 
   return { systemPrompt, userPrompt }
