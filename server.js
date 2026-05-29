@@ -53,6 +53,7 @@ function createApp() {
   app.post('/api/taste', (req, res) => {
     const { liked, disliked, routines, moodRules } = req.body
     state.setPrefs('taste_profile', { liked, disliked, routines, moodRules })
+    router.resetAgent()
     res.json({ ok: true })
   })
   app.get('/api/plan/today', (req, res) => res.json({ plan: state.getTodayPlan() }))
